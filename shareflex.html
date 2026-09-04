@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบส่งต่อข้อมูล LINE</title>
-    <!-- นำเข้าสคริปต์ทางการของ LINE ผ่านช่องทางหลักที่เสถียรที่สุด -->
+    <!-- นำเข้าสคริปต์หลักทางช่องทาง CDN สาธารณะของ LINE ที่เสถียรที่สุดบนมือถือ Android -->
     <script src="https://line-scdn.net"></script>
     <style>
         body { font-family: sans-serif; text-align: center; padding: 40px 20px; color: #333; background-color: #f4f7f6; }
@@ -19,14 +19,14 @@
 <body>
 
     <div class="card">
-        <h2>🔄 ระบบส่งต่อข้อความ (v9)</h2>
-        <p id="status-text">กำลังตรวจสอบสถานะการเชื่อมต่อกับ LINE...</p>
+        <h2>🔄 ระบบส่งต่อข้อความ (v10)</h2>
+        <p id="status-text">กำลังเชื่อมต่อตรวจสอบสิทธิ์แอปพลิเคชัน...</p>
         <div class="loader" id="loading-icon"></div>
         <button class="btn-share" id="share-btn" style="display: none;" onclick="triggerLiffSharePicker()">🟢 กดเลือกห้องแชทเพื่อแชร์ต่อ</button>
     </div>
 
     <script>
-        // 🚨 รหัส LIFF ID ของคุณ (ตรวจสอบให้ตรงกับหน้า LINE Login Channel)
+        // รหัส LIFF ID ของคุณที่ถูกต้องแม่นยำ
         const MY_LIFF_ID = "2011437100-YADN8PIm"; 
 
         async function startAppPipeline() {
@@ -36,21 +36,27 @@
                     return;
                 }
 
-                document.getElementById("status-text").innerText = "จับสัญญาณระบบสำเร็จ กำลังยืนยันสิทธิ์...";
+                document.getElementById("status-text").innerText = "เชื่อมต่อสำเร็จ กำลังวิเคราะห์สิทธิ์ธุรกรรม...";
                 
-                // 🛠️ แก้ไขปัญหาหมุนค้าง: ใส่พารามิเตอร์การเคลียร์สิทธิ์เว็บวิวข้ามระบบลงในคำสั่งเปิดตัว
-                await liff.init({ 
-                    liffId: MY_LIFF_ID,
-                    withLoginOnStart: true // บังคับลงทะเบียนตรวจสิทธิ์ทันทีตั้งแต่เริ่มโหลดเพื่อบายพาสความปลอดภัยของ Android
+                // 🛠️ แก้ไข: ใช้โครงสร้างเริ่มต้นแบบคลีนตามมาตรฐานสูงสุด ตัดพารามิเตอร์ลูปค้างออกทั้งหมด
+                await liff.init({ liffId: MY_LIFF_ID });
+
+                // รอจนกว่าออบเจกต์ระบบพร้อมเปิดรับคำสั่งทำงานต่อ
+                liff.ready.then(async () => {
+                    // ตรวจเช็คการล็อกอิน
+                    if (!liff.isLoggedIn()) {
+                        liff.login();
+                        return;
+                    }
+
+                    // ปรับแต่งข้อความ ซ่อนตัวโหลด และแสดงปุ่มกดสีเขียวแมนนวลกรณีป๊อปอัพไม่เด้งรอบแรก
+                    document.getElementById("status-text").innerText = "ยืนยันสิทธิ์ความปลอดภัยเรียบร้อยแล้ว!";
+                    document.getElementById("loading-icon").style.display = "none";
+                    document.getElementById("share-btn").style.display = "block";
+
+                    // ⚡ สั่งรันคำสั่งเรียกหน้าต่างรายชื่อเพื่อนขึ้นมาโดยอัตโนมัติทันที
+                    await triggerLiffSharePicker();
                 });
-
-                // ตรวจเช็คและปลดล็อกหน้าจอแสดงปุ่มกดสีเขียว
-                document.getElementById("status-text").innerText = "ระบบยืนยันสิทธิ์ความปลอดภัยเรียบร้อยแล้ว!";
-                document.getElementById("loading-icon").style.display = "none";
-                document.getElementById("share-btn").style.display = "block";
-
-                // เปิดหน้าต่างดึงรายชื่อเพื่อนอัตโนมัติทันทีในรอบแรก
-                await triggerLiffSharePicker();
 
             } catch (error) {
                 document.getElementById("status-text").innerHTML = "<span class='error-text'>การเชื่อมต่อติดขัด: " + error.message + "</span>";
@@ -100,12 +106,8 @@
             }
         }
 
-        // เริ่มรันฟังก์ชันระบบเมื่อเบราว์เซอร์เตรียมสิทธิ์ความปลอดภัยพื้นฐานพร้อมทำงาน
-        if (document.readyState === "complete" || document.readyState === "interactive") {
-            startAppPipeline();
-        } else {
-            document.addEventListener("DOMContentLoaded", startAppPipeline);
-        }
+        // เริ่มต้นการทำงานระบบเมื่อเบราว์เซอร์เตรียมโครงสร้าง DOM เสร็จสมบูรณ์
+        document.addEventListener("DOMContentLoaded", startAppPipeline);
     </script>
 </body>
 </html>
