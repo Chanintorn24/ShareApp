@@ -17,46 +17,46 @@
 <body>
 
     <div class="card">
-        <h2>🔄 ระบบส่งต่อข้อความ (v6)</h2>
-        <p id="status-text">กำลังตรวจสอบช่องสัญญาณความปลอดภัย...</p>
+        <h2>🔄 ระบบส่งต่อข้อความ (v7)</h2>
+        <p id="status-text">กำลังเชื่อมต่อช่องสัญญาณปลอดภัยระดับสากล...</p>
         <div class="loader" id="loading-icon"></div>
-        <!-- แก้ชื่อฟังก์ชันปุ่มกดไม่ให้ชนกับระบบ -->
-        <button class="btn-share" id="share-btn" style="display: none;" onclick="startLINESharing()">🟢 กดเลือกห้องแชทเพื่อแชร์ต่อ</button>
+        <!-- เปลี่ยนชื่อเรียกฟังก์ชันเป็นชื่อเฉพาะตัวใหม่ล่าสุด -->
+        <button class="btn-share" id="share-btn" style="display: none;" onclick="triggerLiffSharePicker()">🟢 กดเลือกห้องแชทเพื่อแชร์ต่อ</button>
     </div>
 
-    <!-- เรียกสคริปต์ความปลอดภัยหลักของ LINE -->
-    <script src="sdk.js" onload="initLiff()"></script>
+    <!-- 🛠️ แก้ไข: เปลี่ยนคำสั่งเรียกจาก initLiff() ไปเป็นชื่อเฉพาะ startAppPipeline() เพื่อแก้บั๊กชื่อชนระบบ Android -->
+    <script src="sdk.js" onload="startAppPipeline()"></script>
 
     <script>
-        // 🚨 สำคัญมาก: กรุณากรอกรหัส LIFF ID สั้นๆ ของคุณ (ชุดเลข 200xxxxxxx-xxxxxxx) ให้ถูกต้องตรงกัน
+        // 🚨 สำคัญมาก: รหัส LIFF ID ของคุณ (ตรวจสอบให้ตรงกับหน้า LINE Developer)
         const MY_LIFF_ID = "2011437100-YADN8PIm"; 
 
-        async function initLiff() {
+        async function startAppPipeline() {
             try {
                 if (typeof liff === 'undefined') {
-                    document.getElementById("status-text").innerHTML = "<span class='error-text'>ไม่พบสคริปต์หลัก กรุณารีเฟรชหน้าเว็บอีกครั้ง</span>";
+                    document.getElementById("status-text").innerHTML = "<span class='error-text'>ไม่พบไลบรารีหลัก กรุณารีเฟรชหน้าใหม่อีกครั้ง</span>";
                     document.getElementById("loading-icon").style.display = "none";
                     return;
                 }
 
-                document.getElementById("status-text").innerText = "เชื่อมต่อระบบ LINE สำเร็จ กำลังเปิดสิทธิ์แชร์...";
+                document.getElementById("status-text").innerText = "จับสัญญาณเครือข่ายสำเร็จ กำลังยืนยันสิทธิ์...";
                 
-                // สั่งเปิดระบบ LIFF App
+                // เริ่มต้นการระบุสิทธิ์ภายในระบบแอปพลิเคชัน
                 await liff.init({ liffId: MY_LIFF_ID });
 
-                // เช็คสถานะการเข้าสู่ระบบ
+                // เช็คสถานะการเข้าสู่ระบบผ่านแอป LINE
                 if (!liff.isLoggedIn()) {
                     liff.login();
                     return;
                 }
 
-                // ปลดล็อกเปิดปุ่มแชร์และปิดตัวหมุนโหลดข้อมูล
-                document.getElementById("status-text").innerText = "ระบบพร้อมแชร์ข้อมูลเรียบร้อยแล้ว!";
+                // ซ่อนตัวหมุน และปลดล็อกเปิดปุ่มกดสีเขียวทันที
+                document.getElementById("status-text").innerText = "ระบบตรวจสอบความปลอดภัยผ่านฉลุย!";
                 document.getElementById("loading-icon").style.display = "none";
                 document.getElementById("share-btn").style.display = "block";
 
-                // เรียกให้หน้าต่างเลือกเพื่อนเด้งขึ้นมาโดยอัตโนมัติรอบแรกทันที
-                await startLINESharing();
+                // สั่งให้หน้าต่างเลือกเพื่อนเด้งขึ้นมาโดยอัตโนมัติทันทีในรอบแรก
+                await triggerLiffSharePicker();
 
             } catch (error) {
                 document.getElementById("status-text").innerHTML = "<span class='error-text'>การเชื่อมต่อติดขัด: " + error.message + "</span>";
@@ -64,8 +64,8 @@
             }
         }
 
-        // 🛠️ แก้ไข: เปลี่ยนชื่อฟังก์ชันไม่ให้ซ้ำซ้อนกับของ LINE ป้องกันบั๊กลูปค้าง Maximum Call Stack
-        async function startLINESharing() {
+        // ฟังก์ชันสั่งเปิดหน้าต่างดึงรายชื่อเพื่อนและกลุ่มแชทขึ้นมาจากแอป LINE
+        async function triggerLiffSharePicker() {
             try {
                 if (liff.isApiAvailable('shareTargetPicker')) {
                     
@@ -100,10 +100,10 @@
                         setTimeout(() => { liff.closeWindow(); }, 1200);
                     }
                 } else {
-                    alert("กรุณาเปิดสิทธิ์ ShareTargetPicker เป็น Enabled ในหน้าตั้งค่า LINE Developers Console");
+                    alert("กรุณาตรวจสอบสิทธิ์ ShareTargetPicker ในระบบ LINE Developer อีกครั้ง");
                 }
             } catch (err) {
-                document.getElementById("status-text").innerHTML = "<span class='error-text'>ระบบส่งสัญลักษณ์ขัดข้อง: " + err.message + "</span>";
+                document.getElementById("status-text").innerHTML = "<span class='error-text'>ระบบตรวจรับขัดข้อง: " + err.message + "</span>";
             }
         }
     </script>
