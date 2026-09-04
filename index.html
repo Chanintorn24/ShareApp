@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>กำลังดำเนินการแชร์ข้อความ...</title>
-    <!-- นำเข้า SDK ของระบบ LINE LIFF (ขยับมาโหลดเร็วที่สุดที่ส่วนหัวการ์ด) -->
+    <!-- นำเข้า SDK ของระบบ LINE LIFF ตามปกติ -->
     <script src="https://line-scdn.net"></script>
     <style>
         body { font-family: sans-serif; text-align: center; padding-top: 50px; color: #333; background-color: #f9f9f9; }
@@ -16,31 +16,37 @@
 <body>
 
     <div class="loader" id="loading-icon"></div>
-    <p id="status-text">กำลังเริ่มต้นระบบแชร์ข้อความ...</p>
+    <p id="status-text">กำลังเริ่มต้นเชื่อมต่อระบบ LINE...</p>
     <button class="btn" id="retry-btn" onclick="openSharePicker()">คลิกเปิดหน้าต่างแชร์อีกครั้ง</button>
 
     <script>
-        // 🚨 สำคัญมาก: กรุณาเปลี่ยนเป็นรหัส LIFF ID ของคุณที่ได้มาจาก LINE Developers Console
+        // 🚨 สำคัญมาก: กรุณาใส่รหัส LIFF ID สั้นๆ ของคุณที่ได้มาจาก LINE Developers Console
         const MY_LIFF_ID = "2011437100-YADN8PIm"; 
 
-        async function main() {
-            try {
-                // เพิ่มระบบตรวจสอบ: ถ้าระบบดาวน์โหลดไฟล์ LINE ล่าช้า ให้สั่งหน่วงเวลาเปิดรอ 200 มิลลิวินาที
-                if (typeof liff === 'undefined') {
-                    setTimeout(main, 200);
-                    return;
-                }
+        // ฟังก์ชันเริ่มการทำงานแบบบังคับให้เช็คตัวแปรระบบจนกว่าจะพร้อมทำงาน 100%
+        function checkLiffReady() {
+            if (typeof liff !== 'undefined') {
+                document.getElementById("status-text").innerText = "ระบบจับสัญญาณ LIFF ได้เรียบร้อย...";
+                initLiffApp(); // เมื่อระบบดึงสคริปต์ของ LINE สำเร็จ ค่อยสั่งเริ่มต้นทำงาน
+            } else {
+                // หากระบบเครือข่ายยังดาวน์โหลดสคริปต์ไม่เสร็จ ให้สั่งวนลูปตัวเองเพื่อเช็คซ้ำทุกๆ 100 มิลลิวินาที
+                document.getElementById("status-text").innerText = "กำลังรอสคริปต์จาก LINE Server...";
+                setTimeout(checkLiffReady, 100);
+            }
+        }
 
+        async function initLiffApp() {
+            try {
                 // เริ่มต้นระบบ LIFF App
                 await liff.init({ liffId: MY_LIFF_ID });
 
-                // เช็คว่าล็อกอินบน LINE หรือยัง
+                // เช็คสถานะล็อกอินของผู้ใช้ผ่านหน้าแอปพลิเคชัน
                 if (!liff.isLoggedIn()) {
                     liff.login();
                     return;
                 }
 
-                // สั่งรันฟังก์ชันเปิดหน้าต่างเลือกเพื่อนทันที
+                // สั่งรันฟังก์ชันเปิดหน้าต่างเลือกเพื่อนทันทีเมื่อระบบพร้อม
                 await openSharePicker();
 
             } catch (error) {
@@ -55,6 +61,7 @@
                 document.getElementById("retry-btn").style.display = "none";
                 document.getElementById("loading-icon").style.display = "block";
 
+                // ตรวจสอบสิทธิ์ฟีเจอร์การเปิดหน้าแชร์ต่อในระบบ
                 if (liff.isApiAvailable('shareTargetPicker')) {
                     
                     // 🛠️ โครงสร้างข้อความ Flex Message แจ้งโอนเงินสำหรับการแชร์ต่อ
@@ -104,8 +111,8 @@
             }
         }
 
-        // สั่งให้ระบบรอจนกว่าเบราว์เซอร์จะโหลดหน้าจอเสร็จสมบูรณ์ ค่อยเริ่มเปิดรันสคริปต์
-        window.addEventListener('load', main);
+        // สั่งให้คำสั่งวนตรวจสอบเริ่มทำงานทันทีที่หน้าเว็บเปิดขึ้นมา
+        checkLiffReady();
     </script>
 </body>
 </html>
