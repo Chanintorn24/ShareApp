@@ -4,50 +4,65 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>กำลังดำเนินการแชร์ข้อความ...</title>
-    <!-- 1. นำเข้า SDK ของระบบ LINE LIFF -->
+    <!-- นำเข้า SDK ของระบบ LINE LIFF -->
     <script src="https://line-scdn.net"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding-top: 50px; color: #555; }
+        body { font-family: sans-serif; text-align: center; padding-top: 50px; color: #333; background-color: #f9f9f9; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #1DB446; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .btn { background-color: #1DB446; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 50px; cursor: pointer; display: none; margin-top: 15px; }
     </style>
 </head>
 <body>
 
-    <div class="loader"></div>
+    <div class="loader" id="loading-icon"></div>
     <p id="status-text">กำลังเริ่มต้นระบบแชร์ข้อความ...</p>
+    <button class="btn" id="retry-btn" onclick="openSharePicker()">คลิกเปิดหน้าต่างแชร์อีกครั้ง</button>
 
     <script>
-        // ⭐️ เปลี่ยนเป็นรหัส LIFF ID ของคุณที่ได้มาจาก LINE Developers Console
+        // 🚨 สำคัญมาก: กรุณาเปลี่ยนเป็นรหัส LIFF ID ของคุณที่ได้มาจาก LINE Developers Console
+        // (เอาเฉพาะชุดรหัส เช่น 200xxxxxxx-xxxxxxx หลังเครื่องหมาย / ของลิงก์ liff.line.me มาใส่ครับ)
         const MY_LIFF_ID = "2011437100-YADN8PIm"; 
 
         async function main() {
             try {
-                // 2. เริ่มต้นระบบ LIFF App
+                // เริ่มต้นระบบ LIFF App
                 await liff.init({ liffId: MY_LIFF_ID });
 
-                // เช็คว่าผู้ใช้ล็อกอินหรือยัง ถ้ายังให้พาไปล็อกอินก่อน
+                // เช็คว่าล็อกอินบน LINE หรือยัง (ถ้าเปิดในแอป LINE จะผ่านฉลุยโดยอัตโนมัติ)
                 if (!liff.isLoggedIn()) {
                     liff.login();
                     return;
                 }
 
-                document.getElementById("status-text").innerText = "กำลังเปิดหน้าต่างเลือกผู้รับ...";
+                // สั่งรันฟังก์ชันเปิดหน้าต่างเลือกเพื่อนทันที
+                await openSharePicker();
 
-                // 3. ตรวจสอบว่าเปิดสิทธิ์ ShareTargetPicker ใน LINE Developer Console แล้วหรือยัง
+            } catch (error) {
+                document.getElementById("status-text").innerText = "เกิดข้อผิดพลาดในการโหลดระบบ: " + error.message;
+                document.getElementById("loading-icon").style.display = "none";
+            }
+        }
+
+        async function openSharePicker() {
+            try {
+                document.getElementById("status-text").innerText = "กำลังเปิดหน้าต่างเลือกผู้รับ...";
+                document.getElementById("retry-btn").style.display = "none";
+                document.getElementById("loading-icon").style.display = "block";
+
+                // ตรวจสอบสิทธิ์ว่าเปิด ShareTargetPicker ในระบบหลังบ้านหรือยัง
                 if (liff.isApiAvailable('shareTargetPicker')) {
                     
-                    // 🛠️ โครงสร้างข้อมูล Flex Message ที่ต้องการส่งแชร์ต่อ (คัดลอกหน้าตามาจากฝั่ง Google Apps Script ได้เลย)
-                    // หมายเหตุ: โค้ดส่วนนี้สามารถเขียนระบบดึงค่าแบบ Dynamic ผ่าน URL Param ได้ในอนาคตครับ
+                    // 🛠️ ประกอบโครงสร้างการ์ด Flex Message ที่คุณต้องการส่งต่อ 
                     const result = await liff.shareTargetPicker([
                         {
                             "type": "flex",
-                            "altText": "🔔 มีการแชร์ข้อมูลแจ้งชำระเงิน",
+                            "altText": "🔔 แจ้งตรวจสอบข้อมูลชำระเงินใหม่",
                             "contents": {
                                 "type": "bubble",
                                 "header": {
                                     "type": "box", "layout": "vertical", "backgroundColor": "#1DB446",
-                                    "contents": [{ "type": "text", "text": "🔔 ข้อมูลแจ้งชำระเงิน (แชร์ต่อ)", "weight": "bold", "size": "lg", "color": "#ffffff" }]
+                                    "contents": [{ "type": "text", "text": "🔔 ตรวจสอบข้อมูลชำระเงิน (แชร์ต่อ)", "weight": "bold", "size": "lg", "color": "#ffffff" }]
                                 },
                                 "body": {
                                     "type": "box", "layout": "vertical", "spacing": "md",
@@ -55,7 +70,7 @@
                                         {
                                             "type": "box", "layout": "horizontal",
                                             "contents": [
-                                                { "type": "text", "text": "ตรวจสอบข้อมูล:", "size": "sm", "color": "#666666", "weight": "bold" }
+                                                { "type": "text", "text": "กรุณาคลิกเพื่อดูรายละเอียดข้อมูลธุรกรรมต้นฉบับในห้องแชทหลัก", "size": "xs", "color": "#666666", "wrap": true }
                                             ]
                                         }
                                     ]
@@ -65,24 +80,29 @@
                     ]);
 
                     if (result) {
-                        // แชร์สำเร็จ ปิดหน้าต่าง LIFF ทันที
+                        // ถ้าแชร์สำเร็จให้ปิดหน้าต่าง LIFF ตัวเองทันที
                         document.getElementById("status-text").innerText = "แชร์ข้อความเรียบร้อยแล้ว!";
+                        document.getElementById("loading-icon").style.display = "none";
                         setTimeout(() => { liff.closeWindow(); }, 1500);
                     } else {
-                        // ผู้ใช้กดยกเลิก
-                        liff.closeWindow();
+                        // กรณีผู้ใช้กดปิดหน้าต่างเลือกเพื่อนเฉยๆ (กดยกเลิก)
+                        document.getElementById("status-text").innerText = "ยกเลิกการแชร์ข้อความ";
+                        document.getElementById("loading-icon").style.display = "none";
+                        document.getElementById("retry-btn").style.display = "inline-block";
                     }
 
                 } else {
-                    alert("ฟีเจอร์ ShareTargetPicker ยังไม่ได้เปิดใช้งานในระบบของคุณ");
+                    alert("กรุณาเปิดสิทธิ์ ShareTargetPicker เป็น Enable ใน LINE Login Channel ของคุณก่อนใช้งาน");
                     liff.closeWindow();
                 }
-
-            } catch (error) {
-                document.getElementById("status-text").innerText = "เกิดข้อผิดพลาด: " + error.message;
+            } catch (err) {
+                document.getElementById("status-text").innerText = "ระบบแชร์ติดขัด: " + err.message;
+                document.getElementById("loading-icon").style.display = "none";
+                document.getElementById("retry-btn").style.display = "inline-block";
             }
         }
 
+        // เริ่มต้นการทำงานเมื่อโหลดหน้าเว็บ
         main();
     </script>
 </body>
