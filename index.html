@@ -3,59 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>กำลังดำเนินการแชร์ข้อความ...</title>
+    <title>ระบบส่งต่อข้อมูล LINE</title>
+    <!-- นำเข้าสคริปต์ SDK หลักจากเซิร์ฟเวอร์ LINE -->
+    <script src="https://line-scdn.net"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding-top: 50px; color: #333; background-color: #f9f9f9; }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #1DB446; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+        body { font-family: sans-serif; text-align: center; padding: 40px 20px; color: #333; background-color: #f4f7f6; }
+        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 400px; margin: auto; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #1DB446; border-radius: 50%; width: 35px; height: 35px; animation: spin 1s linear infinite; margin: 20px auto; }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .btn { background-color: #1DB446; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 50px; cursor: pointer; display: none; margin-top: 15px; }
+        .btn-share { background-color: #1DB446; color: white; border: none; padding: 14px 28px; font-size: 18px; font-weight: bold; border-radius: 50px; cursor: pointer; width: 100%; box-shadow: 0 4px 10px rgba(29, 180, 70, 0.3); transition: transform 0.1s; margin-top: 10px; }
+        .btn-share:active { transform: scale(0.98); }
+        .error-text { color: #de3545; font-weight: bold; margin-top: 15px; }
     </style>
 </head>
 <body>
 
-    <div class="loader" id="loading-icon"></div>
-    <p id="status-text">กำลังเริ่มต้นเชื่อมต่อระบบแชร์ข้อความ LINE...</p>
-    <button class="btn" id="retry-btn" onclick="openSharePicker()">คลิกเปิดหน้าต่างแชร์อีกครั้ง</button>
-
-    <!-- 🛠️ วิธีแก้ปัญหาค้าง: นำเข้าสคริปต์ของ LINE และสั่งให้ทำงานเริ่มต้นระบบในบรรทัดเดียวกันทันทีเมื่อดาวน์โหลดไฟล์เสร็จ -->
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js" onload="main()"></script>
+    <div class="card">
+        <h2>🔄 ระบบแชร์ข้อความ</h2>
+        <p id="status-text">กำลังเตรียมระบบส่งต่อโปรดรอสักครู่...</p>
+        <div class="loader" id="loading-icon"></div>
+        
+        <!-- ปุ่มกดเปิดแชร์แบบ Manual บายพาสบั๊กหน้าจอค้าง -->
+        <button class="btn-share" id="share-btn" style="display: none;" onclick="openSharePicker()">🟢 กดเลือกห้องแชทเพื่อแชร์ต่อ</button>
+    </div>
 
     <script>
-        // 🚨 สำคัญมาก: กรุณากรอกรหัส LIFF ID สั้นๆ ของคุณ (เช่น 200xxxxxxx-xxxxxxx) ให้ถูกต้อง
+        // 🚨 สำคัญมาก: กรุณากรอกรหัส LIFF ID สั้นๆ ของคุณ (ชุดเลข 200xxxxxxx-xxxxxxx) ให้ถูกต้องตรงกัน
         const MY_LIFF_ID = "2011437100-YADN8PIm"; 
 
-        async function main() {
+        // ฟังก์ชันเริ่มต้นตรวจสอบสิทธิ์แอปพลิเคชัน
+        async function initializeLiff() {
             try {
-                document.getElementById("status-text").innerText = "เชื่อมต่อสำเร็จ กำลังเปิดระบบแชร์...";
+                if (typeof liff === 'undefined') {
+                    document.getElementById("status-text").innerHTML = "<span class='error-text'>ไม่พบไฟล์สคริปต์ของ LINE กรุณารีเฟรชหน้าเว็บอีกครั้ง</span>";
+                    document.getElementById("loading-icon").style.display = "none";
+                    return;
+                }
 
-                // เริ่มต้นการระบุสิทธิ์ภายในระบบแอปพลิเคชัน
+                // สั่งเปิดระบบ LIFF App
                 await liff.init({ liffId: MY_LIFF_ID });
 
-                // บังคับลงชื่อเข้าใช้งานของแอปพลิเคชันโดยอัตโนมัติ
+                // บังคับล็อกอินเปิดรับสิทธิ์ใช้งานระบบ
                 if (!liff.isLoggedIn()) {
                     liff.login();
                     return;
                 }
 
-                // เรียกฟังก์ชันเปิดหน้าต่างเลือกรายชื่อเพื่อนเพื่อกระจายข้อมูล
+                // เมื่อระบบผูกความปลอดภัยผ่านฉลุย ให้ซ่อนไอคอนหมุนและเปิดปุ่มกดสีเขียวทันที
+                document.getElementById("status-text").innerText = "ระบบพร้อมทำงานเรียบร้อยแล้ว!";
+                document.getElementById("loading-icon").style.display = "none";
+                document.getElementById("share-btn").style.display = "block";
+
+                // ⚡ สั่งให้พยายามเปิดหน้าต่างเลือกเพื่อนอัตโนมัติในรอบแรกทันที
                 await openSharePicker();
 
             } catch (error) {
-                document.getElementById("status-text").innerText = "ระบบจับคู่ผิดพลาด: " + error.message;
+                document.getElementById("status-text").innerHTML = "<span class='error-text'>ระบบปฏิเสธการเข้าถึง: " + error.message + "</span>";
                 document.getElementById("loading-icon").style.display = "none";
             }
         }
 
+        // ฟังก์ชันสั่งเรียกหน้าต่างรายชื่อเพื่อน/กลุ่มจากแอป LINE
         async function openSharePicker() {
             try {
-                document.getElementById("status-text").innerText = "กำลังดึงหน้าต่างเลือกผู้รับจาก LINE...";
-                document.getElementById("retry-btn").style.display = "none";
-                document.getElementById("loading-icon").style.display = "block";
-
-                // ตรวจสอบความถูกต้องของสิทธิ์ช่องสัญญาณแชร์ส่งต่อข้อมูล
                 if (liff.isApiAvailable('shareTargetPicker')) {
                     
-                    // 🛠️ ประกอบโครงสร้างชุดข้อความ Flex Message สำหรับแชร์ส่งต่อให้เพื่อนหรือกลุ่ม
+                    // 🛠️ ประกอบโครงสร้างชุดข้อความ Flex Message สำหรับส่งต่อข้อมูล
                     const result = await liff.shareTargetPicker([
                         {
                             "type": "flex",
@@ -82,25 +95,21 @@
                     ]);
 
                     if (result) {
-                        document.getElementById("status-text").innerText = "แชร์ข้อความเรียบร้อยแล้ว!";
-                        document.getElementById("loading-icon").style.display = "none";
-                        setTimeout(() => { liff.closeWindow(); }, 1500);
-                    } else {
-                        document.getElementById("status-text").innerText = "ยกเลิกการแชร์ข้อมูล";
-                        document.getElementById("loading-icon").style.display = "none";
-                        document.getElementById("retry-btn").style.display = "inline-block";
+                        document.getElementById("status-text").innerText = "ส่งข้อมูลแชร์สำเร็จเรียบร้อยแล้ว!";
+                        setTimeout(() => { liff.closeWindow(); }, 1200);
                     }
+                    // หากผู้ใช้กดยกเลิก หน้าต่างจะปิดลงและปุ่มแชร์สีเขียวยังอยู่ให้กดซ้ำได้ปกติ
 
                 } else {
-                    alert("กรุณาเปิดสิทธิ์ ShareTargetPicker เป็น Enable ในช่องแชนเนล LINE Login ก่อนใช้งาน");
-                    liff.closeWindow();
+                    alert("กรุณาเปิดสิทธิ์ ShareTargetPicker เป็น Enabled ในหน้าตั้งค่า LINE Developers Console");
                 }
             } catch (err) {
-                document.getElementById("status-text").innerText = "ระบบส่งสัญลักษณ์ขัดข้อง: " + err.message;
-                document.getElementById("loading-icon").style.display = "none";
-                document.getElementById("retry-btn").style.display = "inline-block";
+                document.getElementById("status-text").innerHTML = "<span class='error-text'>ระบบส่งสัญลักษณ์ขัดข้อง: " + err.message + "</span>";
             }
         }
+
+        // สั่งให้โค้ดเริ่มทำงานทันทีเมื่อหน้าจอเบราว์เซอร์เตรียมโครงสร้าง DOM เสร็จสมบูรณ์
+        document.addEventListener("DOMContentLoaded", initializeLiff);
     </script>
 </body>
 </html>
