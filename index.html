@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>กำลังดำเนินการแชร์ข้อความ...</title>
-    <!-- นำเข้า SDK ของระบบ LINE LIFF ตามปกติ -->
-    <script src="https://line-scdn.net"></script>
     <style>
         body { font-family: sans-serif; text-align: center; padding-top: 50px; color: #333; background-color: #f9f9f9; }
         .loader { border: 4px solid #f3f3f3; border-top: 4px solid #1DB446; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
@@ -16,55 +14,48 @@
 <body>
 
     <div class="loader" id="loading-icon"></div>
-    <p id="status-text">กำลังเริ่มต้นเชื่อมต่อระบบ LINE...</p>
+    <p id="status-text">กำลังเริ่มต้นเชื่อมต่อระบบแชร์ข้อความ LINE...</p>
     <button class="btn" id="retry-btn" onclick="openSharePicker()">คลิกเปิดหน้าต่างแชร์อีกครั้ง</button>
 
+    <!-- 🛠️ วิธีแก้ปัญหาค้าง: นำเข้าสคริปต์ของ LINE และสั่งให้ทำงานเริ่มต้นระบบในบรรทัดเดียวกันทันทีเมื่อดาวน์โหลดไฟล์เสร็จ -->
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js" onload="main()"></script>
+
     <script>
-        // 🚨 สำคัญมาก: กรุณาใส่รหัส LIFF ID สั้นๆ ของคุณที่ได้มาจาก LINE Developers Console
+        // 🚨 สำคัญมาก: กรุณากรอกรหัส LIFF ID สั้นๆ ของคุณ (เช่น 200xxxxxxx-xxxxxxx) ให้ถูกต้อง
         const MY_LIFF_ID = "2011437100-YADN8PIm"; 
 
-        // ฟังก์ชันเริ่มการทำงานแบบบังคับให้เช็คตัวแปรระบบจนกว่าจะพร้อมทำงาน 100%
-        function checkLiffReady() {
-            if (typeof liff !== 'undefined') {
-                document.getElementById("status-text").innerText = "ระบบจับสัญญาณ LIFF ได้เรียบร้อย...";
-                initLiffApp(); // เมื่อระบบดึงสคริปต์ของ LINE สำเร็จ ค่อยสั่งเริ่มต้นทำงาน
-            } else {
-                // หากระบบเครือข่ายยังดาวน์โหลดสคริปต์ไม่เสร็จ ให้สั่งวนลูปตัวเองเพื่อเช็คซ้ำทุกๆ 100 มิลลิวินาที
-                document.getElementById("status-text").innerText = "กำลังรอสคริปต์จาก LINE Server...";
-                setTimeout(checkLiffReady, 100);
-            }
-        }
-
-        async function initLiffApp() {
+        async function main() {
             try {
-                // เริ่มต้นระบบ LIFF App
+                document.getElementById("status-text").innerText = "เชื่อมต่อสำเร็จ กำลังเปิดระบบแชร์...";
+
+                // เริ่มต้นการระบุสิทธิ์ภายในระบบแอปพลิเคชัน
                 await liff.init({ liffId: MY_LIFF_ID });
 
-                // เช็คสถานะล็อกอินของผู้ใช้ผ่านหน้าแอปพลิเคชัน
+                // บังคับลงชื่อเข้าใช้งานของแอปพลิเคชันโดยอัตโนมัติ
                 if (!liff.isLoggedIn()) {
                     liff.login();
                     return;
                 }
 
-                // สั่งรันฟังก์ชันเปิดหน้าต่างเลือกเพื่อนทันทีเมื่อระบบพร้อม
+                // เรียกฟังก์ชันเปิดหน้าต่างเลือกรายชื่อเพื่อนเพื่อกระจายข้อมูล
                 await openSharePicker();
 
             } catch (error) {
-                document.getElementById("status-text").innerText = "เกิดข้อผิดพลาดในการโหลดระบบ: " + error.message;
+                document.getElementById("status-text").innerText = "ระบบจับคู่ผิดพลาด: " + error.message;
                 document.getElementById("loading-icon").style.display = "none";
             }
         }
 
         async function openSharePicker() {
             try {
-                document.getElementById("status-text").innerText = "กำลังเปิดหน้าต่างเลือกผู้รับ...";
+                document.getElementById("status-text").innerText = "กำลังดึงหน้าต่างเลือกผู้รับจาก LINE...";
                 document.getElementById("retry-btn").style.display = "none";
                 document.getElementById("loading-icon").style.display = "block";
 
-                // ตรวจสอบสิทธิ์ฟีเจอร์การเปิดหน้าแชร์ต่อในระบบ
+                // ตรวจสอบความถูกต้องของสิทธิ์ช่องสัญญาณแชร์ส่งต่อข้อมูล
                 if (liff.isApiAvailable('shareTargetPicker')) {
                     
-                    // 🛠️ โครงสร้างข้อความ Flex Message แจ้งโอนเงินสำหรับการแชร์ต่อ
+                    // 🛠️ ประกอบโครงสร้างชุดข้อความ Flex Message สำหรับแชร์ส่งต่อให้เพื่อนหรือกลุ่ม
                     const result = await liff.shareTargetPicker([
                         {
                             "type": "flex",
@@ -95,24 +86,21 @@
                         document.getElementById("loading-icon").style.display = "none";
                         setTimeout(() => { liff.closeWindow(); }, 1500);
                     } else {
-                        document.getElementById("status-text").innerText = "ยกเลิกการแชร์ข้อความ";
+                        document.getElementById("status-text").innerText = "ยกเลิกการแชร์ข้อมูล";
                         document.getElementById("loading-icon").style.display = "none";
                         document.getElementById("retry-btn").style.display = "inline-block";
                     }
 
                 } else {
-                    alert("กรุณาเปิดสิทธิ์ ShareTargetPicker เป็น Enable ใน LINE Login Channel ก่อนใช้งาน");
+                    alert("กรุณาเปิดสิทธิ์ ShareTargetPicker เป็น Enable ในช่องแชนเนล LINE Login ก่อนใช้งาน");
                     liff.closeWindow();
                 }
             } catch (err) {
-                document.getElementById("status-text").innerText = "ระบบแชร์ติดขัด: " + err.message;
+                document.getElementById("status-text").innerText = "ระบบส่งสัญลักษณ์ขัดข้อง: " + err.message;
                 document.getElementById("loading-icon").style.display = "none";
                 document.getElementById("retry-btn").style.display = "inline-block";
             }
         }
-
-        // สั่งให้คำสั่งวนตรวจสอบเริ่มทำงานทันทีที่หน้าเว็บเปิดขึ้นมา
-        checkLiffReady();
     </script>
 </body>
 </html>
