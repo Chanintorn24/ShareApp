@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>กำลังดำเนินการแชร์ข้อความ...</title>
-    <!-- นำเข้า SDK ของระบบ LINE LIFF -->
+    <!-- นำเข้า SDK ของระบบ LINE LIFF (ขยับมาโหลดเร็วที่สุดที่ส่วนหัวการ์ด) -->
     <script src="https://line-scdn.net"></script>
     <style>
         body { font-family: sans-serif; text-align: center; padding-top: 50px; color: #333; background-color: #f9f9f9; }
@@ -21,15 +21,20 @@
 
     <script>
         // 🚨 สำคัญมาก: กรุณาเปลี่ยนเป็นรหัส LIFF ID ของคุณที่ได้มาจาก LINE Developers Console
-        // (เอาเฉพาะชุดรหัส เช่น 200xxxxxxx-xxxxxxx หลังเครื่องหมาย / ของลิงก์ liff.line.me มาใส่ครับ)
         const MY_LIFF_ID = "2011437100-YADN8PIm"; 
 
         async function main() {
             try {
+                // เพิ่มระบบตรวจสอบ: ถ้าระบบดาวน์โหลดไฟล์ LINE ล่าช้า ให้สั่งหน่วงเวลาเปิดรอ 200 มิลลิวินาที
+                if (typeof liff === 'undefined') {
+                    setTimeout(main, 200);
+                    return;
+                }
+
                 // เริ่มต้นระบบ LIFF App
                 await liff.init({ liffId: MY_LIFF_ID });
 
-                // เช็คว่าล็อกอินบน LINE หรือยัง (ถ้าเปิดในแอป LINE จะผ่านฉลุยโดยอัตโนมัติ)
+                // เช็คว่าล็อกอินบน LINE หรือยัง
                 if (!liff.isLoggedIn()) {
                     liff.login();
                     return;
@@ -50,10 +55,9 @@
                 document.getElementById("retry-btn").style.display = "none";
                 document.getElementById("loading-icon").style.display = "block";
 
-                // ตรวจสอบสิทธิ์ว่าเปิด ShareTargetPicker ในระบบหลังบ้านหรือยัง
                 if (liff.isApiAvailable('shareTargetPicker')) {
                     
-                    // 🛠️ ประกอบโครงสร้างการ์ด Flex Message ที่คุณต้องการส่งต่อ 
+                    // 🛠️ โครงสร้างข้อความ Flex Message แจ้งโอนเงินสำหรับการแชร์ต่อ
                     const result = await liff.shareTargetPicker([
                         {
                             "type": "flex",
@@ -70,7 +74,7 @@
                                         {
                                             "type": "box", "layout": "horizontal",
                                             "contents": [
-                                                { "type": "text", "text": "กรุณาคลิกเพื่อดูรายละเอียดข้อมูลธุรกรรมต้นฉบับในห้องแชทหลัก", "size": "xs", "color": "#666666", "wrap": true }
+                                                { "type": "text", "text": "กรุณาคลิกดูรายละเอียดข้อมูลธุรกรรมต้นฉบับผ่านทางห้องแชทหลัก", "size": "xs", "color": "#666666", "wrap": true }
                                             ]
                                         }
                                     ]
@@ -80,19 +84,17 @@
                     ]);
 
                     if (result) {
-                        // ถ้าแชร์สำเร็จให้ปิดหน้าต่าง LIFF ตัวเองทันที
                         document.getElementById("status-text").innerText = "แชร์ข้อความเรียบร้อยแล้ว!";
                         document.getElementById("loading-icon").style.display = "none";
                         setTimeout(() => { liff.closeWindow(); }, 1500);
                     } else {
-                        // กรณีผู้ใช้กดปิดหน้าต่างเลือกเพื่อนเฉยๆ (กดยกเลิก)
                         document.getElementById("status-text").innerText = "ยกเลิกการแชร์ข้อความ";
                         document.getElementById("loading-icon").style.display = "none";
                         document.getElementById("retry-btn").style.display = "inline-block";
                     }
 
                 } else {
-                    alert("กรุณาเปิดสิทธิ์ ShareTargetPicker เป็น Enable ใน LINE Login Channel ของคุณก่อนใช้งาน");
+                    alert("กรุณาเปิดสิทธิ์ ShareTargetPicker เป็น Enable ใน LINE Login Channel ก่อนใช้งาน");
                     liff.closeWindow();
                 }
             } catch (err) {
@@ -102,8 +104,8 @@
             }
         }
 
-        // เริ่มต้นการทำงานเมื่อโหลดหน้าเว็บ
-        main();
+        // สั่งให้ระบบรอจนกว่าเบราว์เซอร์จะโหลดหน้าจอเสร็จสมบูรณ์ ค่อยเริ่มเปิดรันสคริปต์
+        window.addEventListener('load', main);
     </script>
 </body>
 </html>
