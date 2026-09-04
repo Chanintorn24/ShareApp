@@ -17,14 +17,14 @@
 <body>
 
     <div class="card">
-        <h2>🔄 ระบบส่งต่อข้อความ (v4)</h2>
-        <p id="status-text">กำลังเปิดช่องสัญญาณภายในระบบ...</p>
+        <h2>🔄 ระบบส่งต่อข้อความ (v5)</h2>
+        <p id="status-text">กำลังเริ่มต้นเชื่อมต่อระบบความปลอดภัย...</p>
         <div class="loader" id="loading-icon"></div>
         <button class="btn-share" id="share-btn" style="display: none;" onclick="openSharePicker()">🟢 กดเลือกห้องแชทเพื่อแชร์ต่อ</button>
     </div>
 
-    <!-- 🛠️ แก้ไข: เปลี่ยนมาโหลดไฟล์ sdk.js ที่อยู่ในกิตฮับของตัวเราเอง เพื่อข้ามระบบบล็อกความปลอดภัยของ LINE -->
-    <script src="sdk.js" onload="initLiff()"></script>
+    <!-- 1. ดึงไฟล์สคริปต์ภายในโฟลเดอร์ปกติ (ตัดสิทธิ์คำสั่ง onload ที่เคยค้างออก) -->
+    <script src="sdk.js"></script>
 
     <script>
         // 🚨 สำคัญมาก: กรุณากรอกรหัส LIFF ID สั้นๆ ของคุณ (ชุดเลข 200xxxxxxx-xxxxxxx) ให้ถูกต้องตรงกัน
@@ -32,9 +32,13 @@
 
         async function initLiff() {
             try {
-                document.getElementById("status-text").innerText = "เชื่อมต่อระบบ LINE สำเร็จ กำลังเปิดสิทธิ์แชร์...";
-                
-                // สั่งเปิดระบบ LIFF App
+                if (typeof liff === 'undefined') {
+                    document.getElementById("status-text").innerHTML = "<span class='error-text'>ไม่พบตัวแปรระบบหลัก กรุณารีเฟรชหน้าใหม่อีกครั้ง</span>";
+                    document.getElementById("loading-icon").style.display = "none";
+                    return;
+                }
+
+                // สั่งเปิดระบบสิทธิ์ร่วมกับ LINE
                 await liff.init({ liffId: MY_LIFF_ID });
 
                 // เช็คสถานะการเข้าสู่ระบบ
@@ -43,12 +47,12 @@
                     return;
                 }
 
-                // ปลดล็อกเปิดปุ่มแชร์และปิดตัวหมุนโหลดข้อมูล
-                document.getElementById("status-text").innerText = "ระบบพร้อมแชร์ข้อมูลเรียบร้อยแล้ว!";
+                // เปลี่ยนข้อความ ซ่อนตัวโหลด และโชว์ปุ่มกดสีเขียวแบบแมนนวลเพื่อความปลอดภัย
+                document.getElementById("status-text").innerText = "ระบบพร้อมส่งข้อมูลเรียบร้อยแล้ว!";
                 document.getElementById("loading-icon").style.display = "none";
                 document.getElementById("share-btn").style.display = "block";
 
-                // เรียกให้หน้าต่างเลือกเพื่อนเด้งขึ้นมาโดยอัตโนมัติในรอบแรกทันที
+                // สั่งรันคำสั่งเปิดหน้าต่างดึงรายชื่อเพื่อนโดยอัตโนมัติรอบแรกทันที
                 await openSharePicker();
 
             } catch (error) {
@@ -60,6 +64,8 @@
         async function openSharePicker() {
             try {
                 if (liff.isApiAvailable('shareTargetPicker')) {
+                    
+                    // 🛠️ โครงสร้างข้อความ Flex Message แจ้งโอนเงินสำหรับการแชร์ต่อออกไปหาเพื่อน
                     const result = await liff.shareTargetPicker([
                         {
                             "type": "flex",
@@ -96,6 +102,9 @@
                 document.getElementById("status-text").innerHTML = "<span class='error-text'>ระบบส่งสัญลักษณ์ขัดข้อง: " + err.message + "</span>";
             }
         }
+
+        // 🛠️ ปรับปรุง: สั่งให้สคริปต์เริ่มต้นตรวจสอบเมื่อโครงสร้างหน้าเว็บพร้อมทำงานอย่างปลอดภัย
+        document.addEventListener("DOMContentLoaded", initLiff);
     </script>
 </body>
 </html>
