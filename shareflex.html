@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบส่งต่อข้อมูล LINE</title>
-    <!-- 🛠️ 1. นำเข้าสคริปต์ทางการของ LINE ผ่านช่องทางหลักที่ระบบ Android ยอมรับ 100% โดยตัดพารามิเตอร์ onload ออก -->
+    <!-- นำเข้าสคริปต์ทางการของ LINE ผ่านช่องทางหลักที่เสถียรที่สุด -->
     <script src="https://line-scdn.net"></script>
     <style>
         body { font-family: sans-serif; text-align: center; padding: 40px 20px; color: #333; background-color: #f4f7f6; }
@@ -19,43 +19,37 @@
 <body>
 
     <div class="card">
-        <h2>🔄 ระบบส่งต่อข้อความ (v8)</h2>
-        <p id="status-text">กำลังยืนยันช่องสัญญาณปลอดภัยผ่าน LINE CDN...</p>
+        <h2>🔄 ระบบส่งต่อข้อความ (v9)</h2>
+        <p id="status-text">กำลังตรวจสอบสถานะการเชื่อมต่อกับ LINE...</p>
         <div class="loader" id="loading-icon"></div>
         <button class="btn-share" id="share-btn" style="display: none;" onclick="triggerLiffSharePicker()">🟢 กดเลือกห้องแชทเพื่อแชร์ต่อ</button>
     </div>
 
     <script>
-        // 🚨 รหัส LIFF ID ของคุณที่ถูกต้องแม่นยำ
+        // 🚨 รหัส LIFF ID ของคุณ (ตรวจสอบให้ตรงกับหน้า LINE Login Channel)
         const MY_LIFF_ID = "2011437100-YADN8PIm"; 
 
-        // ฟังก์ชันเริ่มการทำงานของแอปพลิเคชัน
         async function startAppPipeline() {
             try {
-                // ระบบเซฟตี้แบบวนเช็ค: ป้องกันกรณีเบราว์เซอร์ดาวน์โหลดไฟล์ข้ามค่ายล่าช้า 
                 if (typeof liff === 'undefined') {
-                    document.getElementById("status-text").innerText = "กำลังดาวน์โหลดปลั๊กอินความปลอดภัยหลัก...";
                     setTimeout(startAppPipeline, 100);
                     return;
                 }
 
-                document.getElementById("status-text").innerText = "สแกนไฟล์ระบบสำเร็จ กำลังยืนยันสิทธิ์ถาวร...";
+                document.getElementById("status-text").innerText = "จับสัญญาณระบบสำเร็จ กำลังยืนยันสิทธิ์...";
                 
-                // สั่งเปิดระบบสิทธิ์ร่วมกับแอปพลิเคชัน LINE
-                await liff.init({ liffId: MY_LIFF_ID });
+                // 🛠️ แก้ไขปัญหาหมุนค้าง: ใส่พารามิเตอร์การเคลียร์สิทธิ์เว็บวิวข้ามระบบลงในคำสั่งเปิดตัว
+                await liff.init({ 
+                    liffId: MY_LIFF_ID,
+                    withLoginOnStart: true // บังคับลงทะเบียนตรวจสิทธิ์ทันทีตั้งแต่เริ่มโหลดเพื่อบายพาสความปลอดภัยของ Android
+                });
 
-                // ตรวจเช็คสถานะการเข้าสู่ระบบผ่านบัญชีผู้ใช้
-                if (!liff.isLoggedIn()) {
-                    liff.login();
-                    return;
-                }
-
-                // เมื่อสิทธิ์ผ่านฉลุย ให้ซ่อนรูปหมุนและเปิดปุ่มกดสีเขียวทันที
+                // ตรวจเช็คและปลดล็อกหน้าจอแสดงปุ่มกดสีเขียว
                 document.getElementById("status-text").innerText = "ระบบยืนยันสิทธิ์ความปลอดภัยเรียบร้อยแล้ว!";
                 document.getElementById("loading-icon").style.display = "none";
                 document.getElementById("share-btn").style.display = "block";
 
-                // สั่งให้หน้าต่างเลือกเพื่อนเด้งขึ้นมาโดยอัตโนมัติทันทีในรอบแรก
+                // เปิดหน้าต่างดึงรายชื่อเพื่อนอัตโนมัติทันทีในรอบแรก
                 await triggerLiffSharePicker();
 
             } catch (error) {
@@ -64,7 +58,6 @@
             }
         }
 
-        // ฟังก์ชันสั่งเปิดหน้าต่างดึงรายชื่อเพื่อนและกลุ่มแชทขึ้นมาจากแอป LINE
         async function triggerLiffSharePicker() {
             try {
                 if (liff.isApiAvailable('shareTargetPicker')) {
@@ -107,8 +100,12 @@
             }
         }
 
-        // ใช้คำสั่งรับเหตุการณ์ระดับสากล สั่งรันฟังก์ชันหลังจากระบบเบราว์เซอร์ Android วาดหน้าจอเสร็จสิ้นสมบูรณ์
-        document.addEventListener("DOMContentLoaded", startAppPipeline);
+        // เริ่มรันฟังก์ชันระบบเมื่อเบราว์เซอร์เตรียมสิทธิ์ความปลอดภัยพื้นฐานพร้อมทำงาน
+        if (document.readyState === "complete" || document.readyState === "interactive") {
+            startAppPipeline();
+        } else {
+            document.addEventListener("DOMContentLoaded", startAppPipeline);
+        }
     </script>
 </body>
 </html>
