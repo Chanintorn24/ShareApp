@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบส่งต่อข้อมูล LINE</title>
-    <!-- นำเข้าสคริปต์หลักทางช่องทาง CDN สาธารณะของ LINE ที่เสถียรที่สุดบนมือถือ Android -->
-    <script src="https://line-scdn.net"></script>
     <style>
         body { font-family: sans-serif; text-align: center; padding: 40px 20px; color: #333; background-color: #f4f7f6; }
         .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 400px; margin: auto; }
@@ -19,11 +17,14 @@
 <body>
 
     <div class="card">
-        <h2>🔄 ระบบส่งต่อข้อความ (v11)</h2>
-        <p id="status-text">กำลังเชื่อมต่อตรวจสอบสิทธิ์แอปพลิเคชัน...</p>
+        <h2>🔄 ระบบส่งต่อข้อความ (v12)</h2>
+        <p id="status-text">กำลังเริ่มต้นเชื่อมต่อระบบความปลอดภัย LINE...</p>
         <div class="loader" id="loading-icon"></div>
         <button class="btn-share" id="share-btn" style="display: none;" onclick="triggerLiffSharePicker()">🟢 กดเลือกห้องแชทเพื่อแชร์ต่อ</button>
     </div>
+
+    <!-- 🛠️ แก้คิวชนกัน: สั่งให้รันฟังก์ชัน startAppPipeline() หลังจากสคริปต์ของ LINE โหลดเสร็จเรียบร้อยผ่าน onload -->
+    <script src="https://line-scdn.net" onload="startAppPipeline()"></script>
 
     <script>
         // รหัส LIFF ID ของคุณที่ถูกต้องแม่นยำ
@@ -32,9 +33,9 @@
         async function startAppPipeline() {
             try {
                 // เปลี่ยนข้อความทันทีเพื่อแจ้งให้ผู้ใช้ทราบว่าสคริปต์เริ่มรันงานแล้ว
-                document.getElementById("status-text").innerText = "สแกนไฟล์เครือข่ายสำเร็จ กำลังยืนยันสิทธิ์แชร์...";
+                document.getElementById("status-text").innerText = "จับสัญญาณระบบสำเร็จ กำลังยืนยันสิทธิ์แชร์...";
                 
-                // 🛠️ แก้ไขปัญหาหมุนค้าง: ปล่อยให้ liff.init ทำงานทันทีโดยตรงโดยไม่มีฟังก์ชันตรวจค่ามาดักขัดขวางคิวงาน
+                // สั่งเปิดระบบสิทธิ์ร่วมกับแอปพลิเคชัน LINE
                 await liff.init({ liffId: MY_LIFF_ID });
 
                 // เช็คสถานะการเข้าสู่ระบบผ่านบัญชีผู้ใช้
@@ -98,9 +99,6 @@
                 document.getElementById("status-text").innerHTML = "<span class='error-text'>ระบบตรวจรับขัดข้อง: " + err.message + "</span>";
             }
         }
-
-        // 🛠️ เปลี่ยนแปลง: สั่งให้สคริปต์เริ่มรันทำงานทันทีในบรรทัดเดียวกันโดยไม่ต้องรอเหตุการณ์โหลดเสร็จภายนอก
-        startAppPipeline();
     </script>
 </body>
 </html>
