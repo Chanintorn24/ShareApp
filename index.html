@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบส่งต่อข้อมูล LINE</title>
-    <!-- นำเข้าสคริปต์ SDK หลักจากเซิร์ฟเวอร์ LINE -->
-    <script src="https://line-scdn.net"></script>
     <style>
         body { font-family: sans-serif; text-align: center; padding: 40px 20px; color: #333; background-color: #f4f7f6; }
         .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 400px; margin: auto; }
@@ -23,7 +21,7 @@
         <p id="status-text">กำลังเตรียมระบบส่งต่อโปรดรอสักครู่...</p>
         <div class="loader" id="loading-icon"></div>
         
-        <!-- ปุ่มกดเปิดแชร์แบบ Manual บายพาสบั๊กหน้าจอค้าง -->
+        <!-- ปุ่มกดแชร์สีเขียวที่จะถูกเปิดล็อกอัตโนมัติ -->
         <button class="btn-share" id="share-btn" style="display: none;" onclick="openSharePicker()">🟢 กดเลือกห้องแชทเพื่อแชร์ต่อ</button>
     </div>
 
@@ -31,44 +29,64 @@
         // 🚨 สำคัญมาก: กรุณากรอกรหัส LIFF ID สั้นๆ ของคุณ (ชุดเลข 200xxxxxxx-xxxxxxx) ให้ถูกต้องตรงกัน
         const MY_LIFF_ID = "2011437100-YADN8PIm"; 
 
-        // ฟังก์ชันเริ่มต้นตรวจสอบสิทธิ์แอปพลิเคชัน
-        async function initializeLiff() {
-            try {
-                if (typeof liff === 'undefined') {
-                    document.getElementById("status-text").innerHTML = "<span class='error-text'>ไม่พบไฟล์สคริปต์ของ LINE กรุณารีเฟรชหน้าเว็บอีกครั้ง</span>";
+        // ฟังก์ชันช่วยดาวน์โหลดและติดตั้งสคริปต์ LINE SDK ผ่านช่องทางสำรองที่ปลอดภัย
+        function loadLineScript(url, callback) {
+            var script = document.createElement("script");
+            script.type = "text/javascript";
+            script.src = url;
+            script.onload = function() {
+                callback();
+            };
+            script.onerror = function() {
+                // หากเซิร์ฟเวอร์หลักโดนบล็อก ให้สลับดึงไฟล์ผ่านโครงสร้าง CDN สาธารณะที่เป็นพันธมิตรของกูเกิลทันที
+                document.getElementById("status-text").innerText = "ระบบหลักถูกบล็อก กำลังเชื่อมต่อช่องทางสำรอง...";
+                var fallbackScript = document.createElement("script");
+                fallbackScript.type = "text/javascript";
+                fallbackScript.src = "https://cloudflare.com";
+                fallbackScript.onload = callback;
+                fallbackScript.onerror = function() {
+                    document.getElementById("status-text").innerHTML = "<span class='error-text'>เครือข่ายมือถือของคุณบล็อกระบบ LINE กรุณาเปิด/ปิดอินเทอร์เน็ตแล้วลองใหม่</span>";
                     document.getElementById("loading-icon").style.display = "none";
-                    return;
-                }
-
-                // สั่งเปิดระบบ LIFF App
-                await liff.init({ liffId: MY_LIFF_ID });
-
-                // บังคับล็อกอินเปิดรับสิทธิ์ใช้งานระบบ
-                if (!liff.isLoggedIn()) {
-                    liff.login();
-                    return;
-                }
-
-                // เมื่อระบบผูกความปลอดภัยผ่านฉลุย ให้ซ่อนไอคอนหมุนและเปิดปุ่มกดสีเขียวทันที
-                document.getElementById("status-text").innerText = "ระบบพร้อมทำงานเรียบร้อยแล้ว!";
-                document.getElementById("loading-icon").style.display = "none";
-                document.getElementById("share-btn").style.display = "block";
-
-                // ⚡ สั่งให้พยายามเปิดหน้าต่างเลือกเพื่อนอัตโนมัติในรอบแรกทันที
-                await openSharePicker();
-
-            } catch (error) {
-                document.getElementById("status-text").innerHTML = "<span class='error-text'>ระบบปฏิเสธการเข้าถึง: " + error.message + "</span>";
-                document.getElementById("loading-icon").style.display = "none";
-            }
+                };
+                document.body.appendChild(fallbackScript);
+            };
+            document.body.appendChild(script);
         }
 
-        // ฟังก์ชันสั่งเรียกหน้าต่างรายชื่อเพื่อน/กลุ่มจากแอป LINE
+        // เริ่มต้นการทำงานระบบแอปพลิเคชัน
+        function startApp() {
+            loadLineScript("https://line-scdn.net", async function() {
+                try {
+                    // สั่งเปิดระบบสิทธิ์ร่วมกับ LINE
+                    await liff.init({ liffId: MY_LIFF_ID });
+
+                    // ตรวจเช็คสถานะการเข้าสู่ระบบ
+                    if (!liff.isLoggedIn()) {
+                        liff.login();
+                        return;
+                    }
+
+                    // ปลดล็อกเปิดปุ่มแชร์และซ่อนตัวหมุนโหลดข้อมูล
+                    document.getElementById("status-text").innerText = "ระบบพร้อมทำงานเรียบร้อยแล้ว!";
+                    document.getElementById("loading-icon").style.display = "none";
+                    document.getElementById("share-btn").style.display = "block";
+
+                    // สั่งทำงานเปิดหน้าต่างเลือกเพื่อนโดยอัตโนมัติในรอบแรก
+                    await openSharePicker();
+
+                } catch (error) {
+                    document.getElementById("status-text").innerHTML = "<span class='error-text'>ระบบปฏิเสธการเข้าถึง: " + error.message + "</span>";
+                    document.getElementById("loading-icon").style.display = "none";
+                }
+            });
+        }
+
+        // ฟังก์ชันเปิดหน้าต่างดึงรายชื่อเพื่อนและกลุ่มแชทขึ้นมาจากแอป LINE
         async function openSharePicker() {
             try {
                 if (liff.isApiAvailable('shareTargetPicker')) {
                     
-                    // 🛠️ ประกอบโครงสร้างชุดข้อความ Flex Message สำหรับส่งต่อข้อมูล
+                    // 🛠️ โครงสร้างชุดข้อความ Flex Message สำหรับส่งแชร์ต่อออกไปหาเพื่อน
                     const result = await liff.shareTargetPicker([
                         {
                             "type": "flex",
@@ -98,7 +116,6 @@
                         document.getElementById("status-text").innerText = "ส่งข้อมูลแชร์สำเร็จเรียบร้อยแล้ว!";
                         setTimeout(() => { liff.closeWindow(); }, 1200);
                     }
-                    // หากผู้ใช้กดยกเลิก หน้าต่างจะปิดลงและปุ่มแชร์สีเขียวยังอยู่ให้กดซ้ำได้ปกติ
 
                 } else {
                     alert("กรุณาเปิดสิทธิ์ ShareTargetPicker เป็น Enabled ในหน้าตั้งค่า LINE Developers Console");
@@ -108,8 +125,8 @@
             }
         }
 
-        // สั่งให้โค้ดเริ่มทำงานทันทีเมื่อหน้าจอเบราว์เซอร์เตรียมโครงสร้าง DOM เสร็จสมบูรณ์
-        document.addEventListener("DOMContentLoaded", initializeLiff);
+        // เรียกใช้งานฟังก์ชันหลักทันทีเมื่อโหลดโครงสร้างหน้าเว็บเสร็จ
+        window.onload = startApp;
     </script>
 </body>
 </html>
