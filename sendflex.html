@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบส่งต่อข้อมูล LINE</title>
+    <!-- 🛠️ 1. นำเข้าสคริปต์ทางการของ LINE ผ่านช่องทางหลักที่ระบบ Android ยอมรับ 100% โดยตัดพารามิเตอร์ onload ออก -->
+    <script src="https://line-scdn.net"></script>
     <style>
         body { font-family: sans-serif; text-align: center; padding: 40px 20px; color: #333; background-color: #f4f7f6; }
         .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 400px; margin: auto; }
@@ -17,41 +19,39 @@
 <body>
 
     <div class="card">
-        <h2>🔄 ระบบส่งต่อข้อความ (v7)</h2>
-        <p id="status-text">กำลังเชื่อมต่อช่องสัญญาณปลอดภัยระดับสากล...</p>
+        <h2>🔄 ระบบส่งต่อข้อความ (v8)</h2>
+        <p id="status-text">กำลังยืนยันช่องสัญญาณปลอดภัยผ่าน LINE CDN...</p>
         <div class="loader" id="loading-icon"></div>
-        <!-- เปลี่ยนชื่อเรียกฟังก์ชันเป็นชื่อเฉพาะตัวใหม่ล่าสุด -->
         <button class="btn-share" id="share-btn" style="display: none;" onclick="triggerLiffSharePicker()">🟢 กดเลือกห้องแชทเพื่อแชร์ต่อ</button>
     </div>
 
-    <!-- 🛠️ แก้ไข: เปลี่ยนคำสั่งเรียกจาก initLiff() ไปเป็นชื่อเฉพาะ startAppPipeline() เพื่อแก้บั๊กชื่อชนระบบ Android -->
-    <script src="sdk.js"></script>
-
     <script>
-        // 🚨 สำคัญมาก: รหัส LIFF ID ของคุณ (ตรวจสอบให้ตรงกับหน้า LINE Developer)
+        // 🚨 รหัส LIFF ID ของคุณที่ถูกต้องแม่นยำ
         const MY_LIFF_ID = "2011437100-YADN8PIm"; 
 
+        // ฟังก์ชันเริ่มการทำงานของแอปพลิเคชัน
         async function startAppPipeline() {
             try {
+                // ระบบเซฟตี้แบบวนเช็ค: ป้องกันกรณีเบราว์เซอร์ดาวน์โหลดไฟล์ข้ามค่ายล่าช้า 
                 if (typeof liff === 'undefined') {
-                    document.getElementById("status-text").innerHTML = "<span class='error-text'>ไม่พบไลบรารีหลัก กรุณารีเฟรชหน้าใหม่อีกครั้ง</span>";
-                    document.getElementById("loading-icon").style.display = "none";
+                    document.getElementById("status-text").innerText = "กำลังดาวน์โหลดปลั๊กอินความปลอดภัยหลัก...";
+                    setTimeout(startAppPipeline, 100);
                     return;
                 }
 
-                document.getElementById("status-text").innerText = "จับสัญญาณเครือข่ายสำเร็จ กำลังยืนยันสิทธิ์...";
+                document.getElementById("status-text").innerText = "สแกนไฟล์ระบบสำเร็จ กำลังยืนยันสิทธิ์ถาวร...";
                 
-                // เริ่มต้นการระบุสิทธิ์ภายในระบบแอปพลิเคชัน
+                // สั่งเปิดระบบสิทธิ์ร่วมกับแอปพลิเคชัน LINE
                 await liff.init({ liffId: MY_LIFF_ID });
 
-                // เช็คสถานะการเข้าสู่ระบบผ่านแอป LINE
+                // ตรวจเช็คสถานะการเข้าสู่ระบบผ่านบัญชีผู้ใช้
                 if (!liff.isLoggedIn()) {
                     liff.login();
                     return;
                 }
 
-                // ซ่อนตัวหมุน และปลดล็อกเปิดปุ่มกดสีเขียวทันที
-                document.getElementById("status-text").innerText = "ระบบตรวจสอบความปลอดภัยผ่านฉลุย!";
+                // เมื่อสิทธิ์ผ่านฉลุย ให้ซ่อนรูปหมุนและเปิดปุ่มกดสีเขียวทันที
+                document.getElementById("status-text").innerText = "ระบบยืนยันสิทธิ์ความปลอดภัยเรียบร้อยแล้ว!";
                 document.getElementById("loading-icon").style.display = "none";
                 document.getElementById("share-btn").style.display = "block";
 
@@ -106,6 +106,9 @@
                 document.getElementById("status-text").innerHTML = "<span class='error-text'>ระบบตรวจรับขัดข้อง: " + err.message + "</span>";
             }
         }
+
+        // ใช้คำสั่งรับเหตุการณ์ระดับสากล สั่งรันฟังก์ชันหลังจากระบบเบราว์เซอร์ Android วาดหน้าจอเสร็จสิ้นสมบูรณ์
+        document.addEventListener("DOMContentLoaded", startAppPipeline);
     </script>
 </body>
 </html>
