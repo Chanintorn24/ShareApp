@@ -19,7 +19,7 @@
 
     <script>
         // ⭐️ เปลี่ยนเป็นรหัส LIFF ID ของคุณที่ได้มาจาก LINE Developers Console
-        const MY_LIFF_ID = "ใส่_LIFF_ID_ของคุณตรงนี้"; 
+        const MY_LIFF_ID = "2011437100-YADN8PIm"; 
 
         async function main() {
             try {
