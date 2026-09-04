@@ -17,14 +17,14 @@
 <body>
 
     <div class="card">
-        <h2>🔄 ระบบส่งต่อข้อความ (v2)</h2>
-        <p id="status-text">กำลังตรวจสอบช่องสัญญาณความปลอดภัย...</p>
+        <h2>🔄 ระบบส่งต่อข้อความ (v3)</h2>
+        <p id="status-text">กำลังโหลดสคริปต์ความปลอดภัยจาก LINE...</p>
         <div class="loader" id="loading-icon"></div>
         <button class="btn-share" id="share-btn" style="display: none;" onclick="openSharePicker()">🟢 กดเลือกห้องแชทเพื่อแชร์ต่อ</button>
     </div>
 
-    <!-- 🛠️ ดึงไฟล์สคริปต์สำรองโดยตรงผ่าน Cloudflare CDN ที่เสถียรและผ่านตัวกรองของแอป LINE เสมอ -->
-    <script src="https://cloudflare.com"></script>
+    <!-- 🛠️ วิธีแก้คิวทับกัน: สั่งให้ระบุสิทธิ์รันฟังก์ชัน initLiff() ทันที "หลังจาก" ตัวไฟล์ปลั๊กอินโหลดเสร็จสมบูรณ์เรียบร้อยแล้วเท่านั้น -->
+    <script src="https://cloudflare.com" onload="initLiff()"></script>
 
     <script>
         // 🚨 สำคัญมาก: กรุณากรอกรหัส LIFF ID สั้นๆ ของคุณ (ชุดเลข 200xxxxxxx-xxxxxxx) ให้ถูกต้องตรงกัน
@@ -32,7 +32,7 @@
 
         async function initLiff() {
             try {
-                document.getElementById("status-text").innerText = "เชื่อมต่อระบบ LINE สำเร็จ กำลังเปิดระบบแชร์...";
+                document.getElementById("status-text").innerText = "เชื่อมต่อระบบ LINE สำเร็จ กำลังเปิดสิทธิ์แชร์...";
                 
                 // สั่งเปิดระบบ LIFF App
                 await liff.init({ liffId: MY_LIFF_ID });
@@ -43,12 +43,12 @@
                     return;
                 }
 
-                // ปลดล็อกเปิดปุ่มแชร์
+                // ปลดล็อกเปิดปุ่มแชร์และปิดตัวหมุนโหลดข้อมูล
                 document.getElementById("status-text").innerText = "ระบบพร้อมแชร์ข้อมูลเรียบร้อยแล้ว!";
                 document.getElementById("loading-icon").style.display = "none";
                 document.getElementById("share-btn").style.display = "block";
 
-                // เปิดหน้าต่างเลือกรายชื่อเพื่อนทันที
+                // เรียกให้หน้าต่างเลือกเพื่อนเด้งขึ้นมาโดยอัตโนมัติในรอบแรกทันที
                 await openSharePicker();
 
             } catch (error) {
@@ -96,9 +96,6 @@
                 document.getElementById("status-text").innerHTML = "<span class='error-text'>ระบบส่งสัญลักษณ์ขัดข้อง: " + err.message + "</span>";
             }
         }
-
-        // สั่งให้สคริปต์เริ่มรันทำงานทันทีโดยไม่ต้องรอ Event โหลดของระบบตัวเครื่อง
-        initLiff();
     </script>
 </body>
 </html>
