@@ -17,14 +17,14 @@
 <body>
 
     <div class="card">
-        <h2>🔄 ระบบส่งต่อข้อความ (v3)</h2>
-        <p id="status-text">กำลังโหลดสคริปต์ความปลอดภัยจาก LINE...</p>
+        <h2>🔄 ระบบส่งต่อข้อความ (v4)</h2>
+        <p id="status-text">กำลังเปิดช่องสัญญาณภายในระบบ...</p>
         <div class="loader" id="loading-icon"></div>
         <button class="btn-share" id="share-btn" style="display: none;" onclick="openSharePicker()">🟢 กดเลือกห้องแชทเพื่อแชร์ต่อ</button>
     </div>
 
-    <!-- 🛠️ วิธีแก้คิวทับกัน: สั่งให้ระบุสิทธิ์รันฟังก์ชัน initLiff() ทันที "หลังจาก" ตัวไฟล์ปลั๊กอินโหลดเสร็จสมบูรณ์เรียบร้อยแล้วเท่านั้น -->
-    <script src="https://cloudflare.com" onload="initLiff()"></script>
+    <!-- 🛠️ แก้ไข: เปลี่ยนมาโหลดไฟล์ sdk.js ที่อยู่ในกิตฮับของตัวเราเอง เพื่อข้ามระบบบล็อกความปลอดภัยของ LINE -->
+    <script src="sdk.js" onload="initLiff()"></script>
 
     <script>
         // 🚨 สำคัญมาก: กรุณากรอกรหัส LIFF ID สั้นๆ ของคุณ (ชุดเลข 200xxxxxxx-xxxxxxx) ให้ถูกต้องตรงกัน
