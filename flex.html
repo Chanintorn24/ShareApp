@@ -17,14 +17,14 @@
 <body>
 
     <div class="card">
-        <h2>🔄 ระบบส่งต่อข้อความ (v12)</h2>
-        <p id="status-text">กำลังเริ่มต้นเชื่อมต่อระบบความปลอดภัย LINE...</p>
+        <h2>🔄 ระบบส่งต่อข้อความ (v13)</h2>
+        <p id="status-text">กำลังตรวจสอบช่องสัญญาณเครือข่ายปลอดภัย...</p>
         <div class="loader" id="loading-icon"></div>
         <button class="btn-share" id="share-btn" style="display: none;" onclick="triggerLiffSharePicker()">🟢 กดเลือกห้องแชทเพื่อแชร์ต่อ</button>
     </div>
 
-    <!-- 🛠️ แก้คิวชนกัน: สั่งให้รันฟังก์ชัน startAppPipeline() หลังจากสคริปต์ของ LINE โหลดเสร็จเรียบร้อยผ่าน onload -->
-    <script src="https://line-scdn.net" onload="startAppPipeline()"></script>
+    <!-- 1. เรียกดาวน์โหลดปลั๊กอินสคริปต์หลักตรงจาก LINE Server ตามปกติ -->
+    <script src="https://line-scdn.net"></script>
 
     <script>
         // รหัส LIFF ID ของคุณที่ถูกต้องแม่นยำ
@@ -32,7 +32,7 @@
 
         async function startAppPipeline() {
             try {
-                // เปลี่ยนข้อความทันทีเพื่อแจ้งให้ผู้ใช้ทราบว่าสคริปต์เริ่มรันงานแล้ว
+                // เปลี่ยนข้อความทันทีเพื่อยืนยันระบบเริ่มทำงานแล้ว
                 document.getElementById("status-text").innerText = "จับสัญญาณระบบสำเร็จ กำลังยืนยันสิทธิ์แชร์...";
                 
                 // สั่งเปิดระบบสิทธิ์ร่วมกับแอปพลิเคชัน LINE
@@ -99,6 +99,19 @@
                 document.getElementById("status-text").innerHTML = "<span class='error-text'>ระบบตรวจรับขัดข้อง: " + err.message + "</span>";
             }
         }
+
+        // 🛠️ วิธีแก้ดักด่านค้าง: สร้างระบบลูปย่อยระดับมิลลิวินาทีสั่งรันฟังก์ชันตัวเองทันทีเพื่อความชัวร์ 100% โดยไม่ต้องพึ่งพาระบบเบราว์เซอร์ของตัวเครื่อง
+        function executeAutoRun() {
+            if (typeof liff !== 'undefined') {
+                startAppPipeline();
+            } else {
+                // หากหน้าจอโหลดสคริปต์เสี้ยววินาทีแรกยังไม่มา ให้วนเช็คตัวเองใหม่ทุกๆ 50 มิลลิวินาที (เร็วมากและทำงานได้แม่นยำสูงสุด)
+                setTimeout(executeAutoRun, 50);
+            }
+        }
+
+        // สั่งเปิดฉากกระบวนการเช็คสิทธิ์ทันที
+        executeAutoRun();
     </script>
 </body>
 </html>
