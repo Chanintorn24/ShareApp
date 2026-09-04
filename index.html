@@ -17,76 +17,49 @@
 <body>
 
     <div class="card">
-        <h2>🔄 ระบบแชร์ข้อความ (V.2)</v.2></h2>
-        <p id="status-text">กำลังเตรียมระบบส่งต่อโปรดรอสักครู่...</p>
+        <h2>🔄 ระบบส่งต่อข้อความ (v2)</h2>
+        <p id="status-text">กำลังตรวจสอบช่องสัญญาณความปลอดภัย...</p>
         <div class="loader" id="loading-icon"></div>
-        
-        <!-- ปุ่มกดแชร์สีเขียวที่จะถูกเปิดล็อกอัตโนมัติ -->
         <button class="btn-share" id="share-btn" style="display: none;" onclick="openSharePicker()">🟢 กดเลือกห้องแชทเพื่อแชร์ต่อ</button>
     </div>
+
+    <!-- 🛠️ ดึงไฟล์สคริปต์สำรองโดยตรงผ่าน Cloudflare CDN ที่เสถียรและผ่านตัวกรองของแอป LINE เสมอ -->
+    <script src="https://cloudflare.com"></script>
 
     <script>
         // 🚨 สำคัญมาก: กรุณากรอกรหัส LIFF ID สั้นๆ ของคุณ (ชุดเลข 200xxxxxxx-xxxxxxx) ให้ถูกต้องตรงกัน
         const MY_LIFF_ID = "2011437100-YADN8PIm"; 
 
-        // ฟังก์ชันช่วยดาวน์โหลดและติดตั้งสคริปต์ LINE SDK ผ่านช่องทางสำรองที่ปลอดภัย
-        function loadLineScript(url, callback) {
-            var script = document.createElement("script");
-            script.type = "text/javascript";
-            script.src = url;
-            script.onload = function() {
-                callback();
-            };
-            script.onerror = function() {
-                // หากเซิร์ฟเวอร์หลักโดนบล็อก ให้สลับดึงไฟล์ผ่านโครงสร้าง CDN สาธารณะที่เป็นพันธมิตรของกูเกิลทันที
-                document.getElementById("status-text").innerText = "ระบบหลักถูกบล็อก กำลังเชื่อมต่อช่องทางสำรอง...";
-                var fallbackScript = document.createElement("script");
-                fallbackScript.type = "text/javascript";
-                fallbackScript.src = "https://cloudflare.com";
-                fallbackScript.onload = callback;
-                fallbackScript.onerror = function() {
-                    document.getElementById("status-text").innerHTML = "<span class='error-text'>เครือข่ายมือถือของคุณบล็อกระบบ LINE กรุณาเปิด/ปิดอินเทอร์เน็ตแล้วลองใหม่</span>";
-                    document.getElementById("loading-icon").style.display = "none";
-                };
-                document.body.appendChild(fallbackScript);
-            };
-            document.body.appendChild(script);
-        }
+        async function initLiff() {
+            try {
+                document.getElementById("status-text").innerText = "เชื่อมต่อระบบ LINE สำเร็จ กำลังเปิดระบบแชร์...";
+                
+                // สั่งเปิดระบบ LIFF App
+                await liff.init({ liffId: MY_LIFF_ID });
 
-        // เริ่มต้นการทำงานระบบแอปพลิเคชัน
-        function startApp() {
-            loadLineScript("https://line-scdn.net", async function() {
-                try {
-                    // สั่งเปิดระบบสิทธิ์ร่วมกับ LINE
-                    await liff.init({ liffId: MY_LIFF_ID });
-
-                    // ตรวจเช็คสถานะการเข้าสู่ระบบ
-                    if (!liff.isLoggedIn()) {
-                        liff.login();
-                        return;
-                    }
-
-                    // ปลดล็อกเปิดปุ่มแชร์และซ่อนตัวหมุนโหลดข้อมูล
-                    document.getElementById("status-text").innerText = "ระบบพร้อมทำงานเรียบร้อยแล้ว!";
-                    document.getElementById("loading-icon").style.display = "none";
-                    document.getElementById("share-btn").style.display = "block";
-
-                    // สั่งทำงานเปิดหน้าต่างเลือกเพื่อนโดยอัตโนมัติในรอบแรก
-                    await openSharePicker();
-
-                } catch (error) {
-                    document.getElementById("status-text").innerHTML = "<span class='error-text'>ระบบปฏิเสธการเข้าถึง: " + error.message + "</span>";
-                    document.getElementById("loading-icon").style.display = "none";
+                // เช็คสถานะการเข้าสู่ระบบ
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                    return;
                 }
-            });
+
+                // ปลดล็อกเปิดปุ่มแชร์
+                document.getElementById("status-text").innerText = "ระบบพร้อมแชร์ข้อมูลเรียบร้อยแล้ว!";
+                document.getElementById("loading-icon").style.display = "none";
+                document.getElementById("share-btn").style.display = "block";
+
+                // เปิดหน้าต่างเลือกรายชื่อเพื่อนทันที
+                await openSharePicker();
+
+            } catch (error) {
+                document.getElementById("status-text").innerHTML = "<span class='error-text'>การเชื่อมต่อติดขัด: " + error.message + "</span>";
+                document.getElementById("loading-icon").style.display = "none";
+            }
         }
 
-        // ฟังก์ชันเปิดหน้าต่างดึงรายชื่อเพื่อนและกลุ่มแชทขึ้นมาจากแอป LINE
         async function openSharePicker() {
             try {
                 if (liff.isApiAvailable('shareTargetPicker')) {
-                    
-                    // 🛠️ โครงสร้างชุดข้อความ Flex Message สำหรับส่งแชร์ต่อออกไปหาเพื่อน
                     const result = await liff.shareTargetPicker([
                         {
                             "type": "flex",
@@ -116,7 +89,6 @@
                         document.getElementById("status-text").innerText = "ส่งข้อมูลแชร์สำเร็จเรียบร้อยแล้ว!";
                         setTimeout(() => { liff.closeWindow(); }, 1200);
                     }
-
                 } else {
                     alert("กรุณาเปิดสิทธิ์ ShareTargetPicker เป็น Enabled ในหน้าตั้งค่า LINE Developers Console");
                 }
@@ -125,8 +97,8 @@
             }
         }
 
-        // เรียกใช้งานฟังก์ชันหลักทันทีเมื่อโหลดโครงสร้างหน้าเว็บเสร็จ
-        window.onload = startApp;
+        // สั่งให้สคริปต์เริ่มรันทำงานทันทีโดยไม่ต้องรอ Event โหลดของระบบตัวเครื่อง
+        initLiff();
     </script>
 </body>
 </html>
