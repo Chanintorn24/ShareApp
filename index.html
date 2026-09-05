@@ -1,52 +1,56 @@
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>กำลังดำเนินการส่งต่อข้อความ...</title>
-    <style>
-        body { font-family: sans-serif; text-align: center; padding: 40px 20px; color: #333; background-color: #f4f7f6; }
-        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 400px; margin: auto; }
-        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #1DB446; border-radius: 50%; width: 35px; height: 35px; animation: spin 1s linear infinite; margin: 20px auto; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        .btn-share { background-color: #1DB446; color: white; border: none; padding: 14px 28px; font-size: 18px; font-weight: bold; border-radius: 50px; cursor: pointer; width: 100%; box-shadow: 0 4px 10px rgba(29, 180, 70, 0.3); margin-top: 15px; }
-    </style>
-</head>
-<body>
+<script src="https://line-scdn.net"></script>
+<script>
+    // รหัส LIFF ID ของคุณ
+    const MY_LIFF_ID = "2011437100-YADN8PIm"; 
 
-    <div class="card">
-        <h2>🔄 ระบบส่งต่อข้อความ</h2>
-        <p id="status-text">กำลังเปิดหน้าต่างเลือกผู้รับในแอป LINE...</p>
-        <div class="loader" id="loading-icon"></div>
-        <button class="btn-share" id="share-btn" style="display: none;" onclick="redirectToLineShare()">🟢 คลิกที่นี่หากหน้าจอไม่เด้งอัตโนมัติ</button>
-    </div>
+    // เริ่มต้นระบบ LIFF 
+    liff.init({ liffId: MY_LIFF_ID })
+        .then(() => {
+            // เมื่อโหลดเสร็จแล้ว ตรวจสอบว่าผู้ใช้ล็อกอินหรือยัง
+            if (!liff.isLoggedIn()) {
+                liff.login(); // บังคับล็อกอินถ้ายังไม่ได้ล็อกอิน
+            } else {
+                openSharePicker(); // ถ้าล็อกอินแล้วให้เปิดหน้าต่างแชร์ทันที
+            }
+        })
+        .catch((err) => {
+            console.error("LIFF Initialization failed", err);
+            document.getElementById("status-text").innerText = "เกิดข้อผิดพลาดในการเชื่อมต่อระบบ LINE";
+        });
 
-    <script>
-        // รหัส LIFF ID ของคุณ
-        const MY_LIFF_ID = "2011437100-YADN8PIm"; 
-
-        // 🛠️ ปลดล็อกด่านค้าง: สั่งประมวลผลเปลี่ยนเส้นทางหน้าจอทันทีแบบดีเลย์ 100 มิลลิวินาที 
-        // โดยไม่ต้องเรียกใช้ liff.init() ให้ชนคิวระบบรักษาความปลอดภัยของ Android
-        function redirectToLineShare() {
-            // ข้อความที่จะส่งไปพร้อมกับการ์ด
-            const textToShare = "🔔 แจ้งตรวจสอบข้อมูลชำระเงินใหม่\n\nกรุณาคลิกดูรายละเอียดผ่านลิงก์บันทึกข้อมูลธุรกรรม:";
+    function openSharePicker() {
+        // ตรวจสอบความพร้อมของฟังก์ชัน Share Target Picker
+        if (liff.isApiAvailable('shareTargetPicker')) {
             
-            // ลิงก์สำหรับการ์ด Flex Message แจ้งโอนเงินที่จะถูกส่งกระจายต่อ
-            const targetLiffUrl = "https://line.me" + MY_LIFF_ID;
+            // โครงสร้างข้อความที่คุณต้องการส่งแชร์ต่อ (กำหนดข้อความเป็น Flex หรือ Text ได้ที่นี่)
+            liff.shareTargetPicker([
+                {
+                    "type": "text",
+                    "text": "🔔 แจ้งตรวจสอบข้อมูลชำระเงินใหม่\n\nกรุณาคลิกดูรายละเอียดผ่านลิงก์บันทึกข้อมูลธุรกรรม:\nhttps://liff.line.me/" + MY_LIFF_ID
+                }
+            ])
+            .then((res) => {
+                if (res) {
+                    // ส่งแชร์สำเร็จ ปิดหน้าต่าง LIFF ทันที
+                    liff.closeWindow();
+                } else {
+                    document.getElementById("status-text").innerText = "คุณยกเลิกการแชร์ข้อความ";
+                    showBackupButton();
+                }
+            })
+            .catch((error) => {
+                console.error("TargetPicker error:", error);
+                showBackupButton();
+            });
 
-            // ประกอบร่างโครงสร้าง URL Scheme ตามมาตรฐานการแชร์ของ LINE 
-            const lineShareEndpoint = "https://line.me?" + encodeURIComponent(textToShare + "\n" + targetLiffUrl);
-
-            // แสดงปุ่มกดเผื่อฉุกเฉิน
-            document.getElementById("share-btn").style.display = "block";
-            document.getElementById("loading-icon").style.display = "none";
-
-            // สั่งเปิดหน้าต่างเลือกรายชื่อเพื่อนและกลุ่มแชทดั้งเดิมของเครื่องทันที
-            window.location.href = lineShareEndpoint;
+        } else {
+            document.getElementById("status-text").innerText = "ฟังก์ชันแชร์ไม่รองรับบนเบราว์เซอร์นี้";
+            showBackupButton();
         }
+    }
 
-        // สั่งให้สคริปต์ทำงานทันทีที่เบราว์เซอร์ Android เปิดอ่านหน้าเว็บโดยไม่ต้องรออีเวนต์อื่น
-        setTimeout(redirectToLineShare, 100);
-    </script>
-</body>
-</html>
+    function showBackupButton() {
+        document.getElementById("share-btn").style.display = "block";
+        document.getElementById("loading-icon").style.display = "none";
+    }
+</script>
