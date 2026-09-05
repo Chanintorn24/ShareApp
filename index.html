@@ -20,7 +20,7 @@
         <div class="loader" id="loading-icon"></div>
         <h2 id="title-text">🔄 ระบบส่งต่อข้อความ</h2>
         <p id="status-text">กำลังเรียกเปิดระบบแชร์รายชื่อของ LINE กรุณารอสักครู่...</p>
-        <button class="btn-share" id="share-btn" style="display: none;" onclick="openSharePicker()">🟢 คลิกเปิดหน้าต่างแชร์เพื่อนอีกครั้ง</button>
+        <button class="btn-share" id="share-btn" onclick="openSharePicker()">🟢 คลิกที่นี่หากหน้าจอไม่เปิดอัตโนมัติ</button>
     </div>
 
     <script src="https://line-scdn.net"></script>
@@ -31,8 +31,12 @@
             if (typeof liff !== "undefined") {
                 liff.init({ liffId: MY_LIFF_ID })
                     .then(() => {
+                        // ปลดล็อกระบบแสดงผลปุ่มสำรองให้ผู้ใช้คลิกได้ทันที ไม่ต้องรอหน้าหมุนค้าง
+                        document.getElementById("loading-icon").style.display = "none";
+                        
                         if (liff.isLoggedIn()) {
-                            setTimeout(openSharePicker, 500);
+                            // สั่งให้ลองรันระบบเปิดหน้ารายชื่อเพื่อนทันทีแบบอัตโนมัติ
+                            openSharePicker();
                         } else {
                             liff.login();
                         }
@@ -40,7 +44,6 @@
                     .catch((err) => {
                         document.getElementById("title-text").innerText = "❌ เกิดข้อผิดพลาด";
                         document.getElementById("status-text").innerText = "LINE Init ขัดข้อง: " + err;
-                        showBackupButton();
                     });
             } else {
                 setTimeout(initLIFF, 300);
@@ -48,8 +51,8 @@
         }
 
         function openSharePicker() {
+            // เช็คว่าระบบแชร์ของสิทธิ์ LIFF พร้อมเปิดใช้งานในบัญชีแล้วหรือไม่
             if (liff.isApiAvailable('shareTargetPicker')) {
-                // โครงสร้างการ์ด Flex Message แจ้งโอนเงินแบบสวยงามและปิดการแสดงผลรูปสลิปในหัวการ์ด
                 liff.shareTargetPicker([
                     {
                         "type": "flex",
@@ -110,28 +113,15 @@
                 ])
                 .then((res) => {
                     if (res) {
-                        liff.closeWindow(); 
-                    } else {
-                        document.getElementById("title-text").innerText = "ยกเลิกการทำงาน";
-                        document.getElementById("status-text").innerText = "คุณได้ยกเลิกขั้นตอนการส่งต่อข้อความ";
-                        showBackupButton();
+                        liff.closeWindow(); // ส่งแชร์เรียบร้อยปิดหน้าเว็บทันที
                     }
                 })
                 .catch((error) => {
-                    document.getElementById("title-text").innerText = "พบข้อผิดพลาด";
-                    document.getElementById("status-text").innerText = "เกิดปัญหาในขั้นตอนแชร์: " + error.message;
-                    showBackupButton();
+                    alert("เกิดปัญหาในขั้นตอนดึงรายชื่อเพื่อน: " + error.message);
                 });
             } else {
-                document.getElementById("title-text").innerText = "ระบบไม่รองรับ";
-                document.getElementById("status-text").innerText = "กรุณาเปิดสิทธิ์ shareTargetPicker ใน LINE Console และบันทึกข้อมูลก่อน";
-                showBackupButton();
+                alert("อุปกรณ์นี้ไม่รองรับระบบเลือกรายชื่อเพื่อน หรือคุณลืมกดเซฟในหน้า LINE Console");
             }
-        }
-
-        function showBackupButton() {
-            document.getElementById("share-btn").style.display = "block";
-            document.getElementById("loading-icon").style.display = "none";
         }
 
         initLIFF();
