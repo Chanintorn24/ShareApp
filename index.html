@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>กำลังดำเนินการส่งต่อข้อความ...</title>
-    <!-- เรียกสคริปต์ทางการของ LINE เพื่อใช้ประมวลผลปิดหน้าต่างสากล -->
-    <script src="https://line-scdn.net"></script>
     <style>
         body { font-family: sans-serif; text-align: center; padding: 40px 20px; color: #333; background-color: #f4f7f6; }
         .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); max-width: 400px; margin: auto; }
@@ -18,52 +16,37 @@
 
     <div class="card">
         <h2>🔄 ระบบส่งต่อข้อความ</h2>
-        <p id="status-text">กำลังจัดเตรียมข้อมูลธุรกรรมเพื่อส่งต่อ...</p>
+        <p id="status-text">กำลังเปิดหน้าต่างเลือกผู้รับในแอป LINE...</p>
         <div class="loader" id="loading-icon"></div>
-        <button class="btn-share" id="share-btn" style="display: none;" onclick="redirectToLineShare()">🟢 จิ้มที่นี่เพื่อส่งเข้ากลุ่มอื่น</button>
+        <button class="btn-share" id="share-btn" style="display: none;" onclick="redirectToLineShare()">🟢 คลิกที่นี่หากหน้าจอไม่เด้งอัตโนมัติ</button>
     </div>
 
     <script>
         // รหัส LIFF ID ของคุณ
         const MY_LIFF_ID = "2011437100-YADN8PIm"; 
 
-        // เริ่มต้นระบบตรวจสอบความปลอดภัยของ LINE
-        liff.init({ liffId: MY_LIFF_ID }).then(() => {
-            // สั่งรันคำสั่งวาร์ปสิทธิ์ส่งแชร์ต่อทันทีเมื่อระบบหลังบ้านเชื่อมต่อกันเสร็จสิ้น
-            redirectToLineShare();
-        }).catch((err) => {
-            // หากรันผ่านระบบจำลองภายนอก ให้ระบบเปิดสิทธิ์ปุ่มกดสำรองเพื่อความปลอดภัย
-            document.getElementById("status-text").innerText = "กรุณากดปุ่มด้านล่างเพื่อเลือกผู้รับ";
-            document.getElementById("loading-icon").style.display = "none";
-            document.getElementById("share-btn").style.display = "block";
-        });
-
-        // 🛠️ ฟังก์ชันทางออกของนักพัฒนา: ใช้ระบบสตรีมลิงก์สากล (LINE URL Scheme) บายพาสด่านบล็อกโล่เทาของ LINE
+        // 🛠️ ปลดล็อกด่านค้าง: สั่งประมวลผลเปลี่ยนเส้นทางหน้าจอทันทีแบบดีเลย์ 100 มิลลิวินาที 
+        // โดยไม่ต้องเรียกใช้ liff.init() ให้ชนคิวระบบรักษาความปลอดภัยของ Android
         function redirectToLineShare() {
-            // ข้อความพาดหัวที่จะส่งพ่วงไปพร้อมกับการ์ด
+            // ข้อความที่จะส่งไปพร้อมกับการ์ด
             const textToShare = "🔔 แจ้งตรวจสอบข้อมูลชำระเงินใหม่\n\nกรุณาคลิกดูรายละเอียดผ่านลิงก์บันทึกข้อมูลธุรกรรม:";
             
-            // ลิงก์ตัวเต็มของการ์ด Flex Message แจ้งโอนเงินที่จะถูกส่งกระจายต่อหาเพื่อนหรือกลุ่มอื่น
+            // ลิงก์สำหรับการ์ด Flex Message แจ้งโอนเงินที่จะถูกส่งกระจายต่อ
             const targetLiffUrl = "https://line.me" + MY_LIFF_ID;
 
-            // ประกอบร่างโครงสร้าง URL Scheme ตามมาตรฐานการแชร์ภายนอกของ LINE 
+            // ประกอบร่างโครงสร้าง URL Scheme ตามมาตรฐานการแชร์ของ LINE 
             const lineShareEndpoint = "https://line.me?" + encodeURIComponent(textToShare + "\n" + targetLiffUrl);
 
-            // ปรับแต่งข้อความบนหน้าจอก่อนทำการเปลี่ยนหน้าจอ
-            document.getElementById("status-text").innerText = "กำลังเปิดหน้าต่างเลือกเพื่อน...";
-            document.getElementById("loading-icon").style.display = "none";
+            // แสดงปุ่มกดเผื่อฉุกเฉิน
             document.getElementById("share-btn").style.display = "block";
+            document.getElementById("loading-icon").style.display = "none";
 
-            // สั่งให้ตัวแอป LINE วาร์ปเปิดเข้าสู่หน้าต่างเลือกรายชื่อเพื่อนและกลุ่มแชทดั้งเดิมของเครื่องทันที 100%
+            // สั่งเปิดหน้าต่างเลือกรายชื่อเพื่อนและกลุ่มแชทดั้งเดิมของเครื่องทันที
             window.location.href = lineShareEndpoint;
-
-            // หน่วงเวลาสั้นๆ เพื่อสั่งปิดหน้าต่างเว็บวิวสีขาวตามหลังโดยอัตโนมัติอย่างสวยงาม
-            setTimeout(() => {
-                if (typeof liff !== 'undefined' && liff.closeWindow) {
-                    liff.closeWindow();
-                }
-            }, 2000);
         }
+
+        // สั่งให้สคริปต์ทำงานทันทีที่เบราว์เซอร์ Android เปิดอ่านหน้าเว็บโดยไม่ต้องรออีเวนต์อื่น
+        setTimeout(redirectToLineShare, 100);
     </script>
 </body>
 </html>
