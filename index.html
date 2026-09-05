@@ -13,50 +13,53 @@
         p { color: #666; font-size: 15px; line-height: 1.5; }
         .btn-share { background-color: #1DB446; color: white; border: none; padding: 14px 28px; font-size: 16px; font-weight: bold; border-radius: 50px; cursor: pointer; width: 100%; box-shadow: 0 4px 10px rgba(29, 180, 70, 0.3); margin-top: 20px; display: block; margin-left: auto; margin-right: auto; }
     </style>
+
+    <!-- 🟢 เปลี่ยนมาใช้ลิงก์สำรองผ่านเครือข่ายความปลอดภัยความเร็วสูงเพื่อไม่ให้แอป LINE บล็อก -->
+    <script src="https://unpkg.com"></script>
 </head>
 <body>
 
     <div class="card">
         <div class="loader" id="loading-icon"></div>
         <h2 id="title-text">🔄 ระบบส่งต่อข้อความ</h2>
-        <p id="status-text">กำลังตรวจสอบการเชื่อมต่อระบบ LINE...</p>
+        <p id="status-text">กำลังเรียกเปิดระบบแชร์รายชื่อของ LINE กรุณารอสักครู่...</p>
         <button class="btn-share" id="share-btn" onclick="openSharePicker()">🟢 คลิกเปิดหน้าต่างแชร์เพื่อน</button>
     </div>
 
-    <!-- เรียกใช้งาน LIFF SDK มาตรฐานของ LINE -->
-    <script src="https://line-scdn.net"></script>
     <script>
         const MY_LIFF_ID = "2011437100-YADN8PIm"; 
 
-        // ตรวจสอบความพร้อมของ SDK
+        // ตรวจสอบระบบความพร้อมผ่านตัวแปรหลัก
         window.onload = function() {
-            if (typeof liff !== "undefined") {
-                liff.init({ liffId: MY_LIFF_ID })
+            // เช็คตัวแปรของทาง Unpkg SDK สำรอง
+            const liffObj = window.liff || liff;
+            
+            if (typeof liffObj !== "undefined") {
+                liffObj.init({ liffId: MY_LIFF_ID })
                     .then(function() {
                         document.getElementById("loading-icon").style.display = "none";
-                        document.getElementById("status-text").innerText = "ระบบ LINE พร้อมใช้งานแล้ว กำลังเรียกหน้าต่างแชร์...";
+                        document.getElementById("status-text").innerText = "ระบบ LINE เชื่อมต่อสำเร็จแล้ว...";
                         
-                        if (liff.isLoggedIn()) {
-                            // สั่งเรียกหน้ารายชื่อเพื่อนทันทีเมื่อระบบล็อกอินพร้อม
+                        if (liffObj.isLoggedIn()) {
                             openSharePicker();
                         } else {
-                            liff.login();
+                            liffObj.login();
                         }
                     })
                     .catch(function(err) {
                         document.getElementById("title-text").innerText = "❌ เกิดข้อผิดพลาด";
-                        document.getElementById("status-text").innerText = "การเชื่อมต่อระบบล้มเหลว: " + err;
+                        document.getElementById("status-text").innerText = "Init ล้มเหลว: " + err;
                     });
             } else {
                 document.getElementById("title-text").innerText = "❌ เกิดข้อผิดพลาด";
-                document.getElementById("status-text").innerText = "แอปปฏิเสธสิทธิ์การโหลดคลังคำสั่ง LINE";
+                document.getElementById("status-text").innerText = "ไม่สามารถเปิดระบบความปลอดภัยสำรองได้";
             }
         };
 
         function openSharePicker() {
-            if (liff.isApiAvailable('shareTargetPicker')) {
-                // จัดเรียงไวยากรณ์โครงสร้าง Flex Message แจ้งโอนเงินยอด ฿60,000 (ไม่มีภาพสลิปด้านบน)
-                liff.shareTargetPicker([
+            const liffObj = window.liff || liff;
+            if (liffObj.isApiAvailable('shareTargetPicker')) {
+                liffObj.shareTargetPicker([
                     {
                         "type": "flex",
                         "altText": "🔔 แจ้งชำระเงิน ยอด ฿60,000",
@@ -141,14 +144,14 @@
                 ])
                 .then(function(res) {
                     if (res) {
-                        liff.closeWindow(); // ส่งข้อความสำเร็จ ทำการปิดหน้าเว็บทันที
+                        liffObj.closeWindow(); 
                     }
                 })
                 .catch(function(error) {
-                    alert("ขั้นตอนดึงรายชื่อติดขัด: " + error.message);
+                    alert("ขั้นตอนแชร์ติดขัด: " + error.message);
                 });
             } else {
-                alert("ระบบแจ้งว่าบัญชีนี้ยังไม่ได้อนุญาตสิทธิ์ shareTargetPicker ใน LINE Console");
+                alert("กรุณาเปิดสิทธิ์ shareTargetPicker ใน LINE Console");
             }
         }
     </script>
