@@ -14,38 +14,43 @@
         .btn-share { background-color: #1DB446; color: white; border: none; padding: 14px 28px; font-size: 16px; font-weight: bold; border-radius: 50px; cursor: pointer; width: 100%; box-shadow: 0 4px 10px rgba(29, 180, 70, 0.3); margin-top: 20px; display: block; margin-left: auto; margin-right: auto; }
     </style>
     
-    <!-- โหลดคลังคำสั่งสิทธิ์ความปลอดภัยหลักตรงจาก LINE -->
+    <!-- ดึงคลังคำสั่งสิทธิ์ความปลอดภัยหลักตรงจาก LINE -->
     <script src="https://line-scdn.net"></script>
+    <script>
+        const MY_LIFF_ID = "2011437100-YADN8PIm"; 
+
+        // บังคับสั่งรันระบบเริ่มต้นความปลอดภัยแบบ Global ตั้งแต่วินาทีแรกเพื่อให้ผ่านระบบ Android
+        liff.init({ liffId: MY_LIFF_ID })
+            .then(() => { console.log("LIFF Init Success"); })
+            .catch((err) => { console.error("LIFF Init Failed", err); });
+    </script>
 </head>
 <body>
 
     <div class="card">
         <div class="loader" id="loading-icon"></div>
         <h2 id="title-text">🔄 ระบบส่งต่อข้อความ</h2>
-        <p id="status-text">ระบบความปลอดภัยพร้อมใช้งานแล้ว กรุณากดปุ่มสีเขียวด้านล่างเพื่อเลือกรายชื่อผู้รับ</p>
+        <p id="status-text">ระบบความปลอดภัยพร้อมใช้งานแล้ว กรุณาเปิดปุ่มสีเขียวเพื่อส่งต่อการ์ดข้อมูล</p>
         <button class="btn-share" id="share-btn" onclick="openSharePicker()">🟢 คลิกเปิดหน้าต่างแชร์เพื่อน</button>
     </div>
 
     <script>
-        const MY_LIFF_ID = "2011437100-YADN8PIm"; 
-
-        // 🟢 บังคับสั่งรันระบบเริ่มต้นความปลอดภัยแบบ Global ตั้งแต่วินาทีแรกเพื่อให้ Android ผ่านฉลุย
-        liff.init({ liffId: MY_LIFF_ID })
-            .then(() => { console.log("LIFF Init Success"); })
-            .catch((err) => { console.error("LIFF Init Failed", err); });
-
         function openSharePicker() {
-            // 🛠️ ตรวจสอบตัวแปรความพร้อมแบบปลอดภัยสูงสุด
             if (typeof liff === "undefined") {
-                alert("ระบบกำลังเรียกสิทธิ์ในเครื่อง กรุณารอ 1 วินาทีแล้วกดใหม่อีกครั้งครับ");
+                alert("ระบบกำลังเรียกสิทธิ์ความปลอดภัยในเครื่อง กรุณารอสักครู่แล้วลองกดใหม่อีกครั้งครับ");
                 return;
             }
 
-            // 🟢 แก้ไขคำศัพท์: เปลี่ยนมาใช้สิทธิ์ผ่านตัวแปรหลัก liff ตรง ๆ ป้องกันอาการเออร์เรอร์และจอมืดค้างบน Android
+            // 🟢 ฟังก์ชัน Dynamic ดึงค่าพารามิเตอร์แปรผันจาก URL มาใช้งานบนตัวการ์ดโดยอัตโนมัติ
+            const urlParams = new URLSearchParams(window.location.search);
+            const amount = urlParams.get('amount') || "60,000"; // ดึงยอดโอน หากไม่มีให้ใช้ค่าเริ่มต้น 60,000
+            const customer = urlParams.get('cus') || "CCCCCCC"; // ดึงชื่อลูกค้า 
+
+            // ยิงคำสั่งดึงหน้ารายชื่อเพื่อนตรงๆ ทันทีเพื่อส่งการ์ด Flex Message
             liff.shareTargetPicker([
                 {
                     "type": "flex",
-                    "altText": "🔔 แจ้งชำระเงิน ยอด ฿60,000",
+                    "altText": "🔔 แจ้งชำระเงิน ยอด ฿" + amount,
                     "contents": {
                         "type": "bubble",
                         "header": {
@@ -66,7 +71,7 @@
                                     "layout": "horizontal",
                                     "contents": [
                                         { "type": "text", "text": "ยอดชำระเงิน:", "size": "sm", "color": "#666666", "weight": "bold" },
-                                        { "type": "text", "text": "฿60,000", "weight": "bold", "size": "lg", "color": "#1DB446", "align": "end" }
+                                        { "type": "text", "text": "฿" + amount, "weight": "bold", "size": "lg", "color": "#1DB446", "align": "end" }
                                     ]
                                 },
                                 { "type": "separator" },
@@ -107,7 +112,7 @@
                                     "type": "box",
                                     "layout": "vertical",
                                     "contents": [
-                                        { "type": "text", "text": "👤 ลค: CCCCCCC (DO: -)", "weight": "bold", "size": "sm", "color": "#111111" }
+                                        { "type": "text", "text": "👤 ลค: " + customer + " (DO: -)", "weight": "bold", "size": "sm", "color": "#111111" }
                                     ]
                                 },
                                 {
@@ -115,7 +120,7 @@
                                     "layout": "horizontal",
                                     "contents": [
                                         { "type": "text", "text": "  • GKK24 (4 แคปซูล) (x300)", "size": "xs", "color": "#555555" },
-                                        { "type": "text", "text": "฿60,000.00", "size": "xs", "color": "#111111", "align": "end", "weight": "bold" }
+                                        { "type": "text", "text": "฿" + amount + ".00", "size": "xs", "color": "#111111", "align": "end", "weight": "bold" }
                                     ]
                                 }
                             ]
