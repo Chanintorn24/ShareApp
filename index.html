@@ -19,21 +19,28 @@
     <div class="card">
         <div class="loader" id="loading-icon"></div>
         <h2 id="title-text">🔄 ระบบส่งต่อข้อความ</h2>
-        <p id="status-text">กำลังเรียกเปิดระบบแชร์รายชื่อของ LINE กรุณารอสักครู่...</p>
+        <p id="status-text">กำลังตรวจสอบสิทธิ์ผู้ใช้งาน...</p>
         <button class="btn-share" id="share-btn" style="display: none;" onclick="openSharePicker()">🟢 คลิกเปิดหน้าต่างแชร์เพื่อน</button>
     </div>
 
-    <!-- 🟢 ปรับกลับมาใช้ตัวยิงตรงหลักของ LINE เพื่อให้แอปยอมรับการเชื่อมต่อตามสิทธิ์ความปลอดภัย -->
     <script src="https://line-scdn.net"></script>
     <script>
         const MY_LIFF_ID = "2011437100-YADN8PIm"; 
 
         function initLIFF() {
-            // ดักเช็คว่าแอปโหลดตัวแปรของ LINE สำเร็จหรือไม่
             if (typeof liff !== "undefined") {
                 liff.init({ liffId: MY_LIFF_ID })
                     .then(() => {
+                        // 🛠️ เช็คพารามิเตอร์เพื่อสั่ง Force Logout ล้าง Token เสีย
+                        const urlParams = new URLSearchParams(window.location.search);
+                        if (urlParams.has('logout') && liff.isLoggedIn()) {
+                            liff.logout();
+                            window.location.href = window.location.pathname; // โหลดหน้าใหม่แบบ Clean
+                            return;
+                        }
+
                         if (liff.isLoggedIn()) {
+                            document.getElementById("status-text").innerText = "ยืนยันสิทธิ์สำเร็จ กำลังเรียกหน้ารายชื่อเพื่อน...";
                             openSharePicker();
                         } else {
                             liff.login();
@@ -45,7 +52,6 @@
                         showBackupButton();
                     });
             } else {
-                // หากรันด่านแรกไม่ผ่าน ให้ทำการสั่งเปิดรีรันคำสั่งตรวจสอบซ้ำภายใน 300 มิลลิวินาที 
                 setTimeout(initLIFF, 300);
             }
         }
@@ -84,7 +90,6 @@
             document.getElementById("loading-icon").style.display = "none";
         }
 
-        // สั่งให้เริ่มรันกระบวนการตรวจจับสิทธิ์ทันที
         initLIFF();
     </script>
 </body>
