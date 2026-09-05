@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบส่งต่อข้อความแจ้งชำระเงิน</title>
+    
+    <!-- ย้ายมาไว้ใน head และเปลี่ยนไปใช้ไฟล์ SDK เวอร์ชันคงที่เพื่อเสถียรภาพบน Android -->
+    <script src="https://line-scdn.net"></script>
+    
     <style>
         body { font-family: sans-serif; text-align: center; padding: 50px 20px; color: #333; background-color: #f4f7f6; margin: 0; }
         .card { background: white; padding: 40px 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); max-width: 400px; margin: auto; }
@@ -23,17 +27,14 @@
         <button class="btn-share" id="share-btn" style="display: none;" onclick="openSharePicker()">🟢 คลิกเปิดหน้าต่างแชร์เพื่อน</button>
     </div>
 
-    <!-- เรียกใช้สคริปต์เวอร์ชันล่าสุดของ LINE SDK -->
-    <script src="https://line-scdn.net"></script>
     <script>
         const MY_LIFF_ID = "2011437100-YADN8PIm"; 
 
-        document.addEventListener("DOMContentLoaded", function() {
+        // ตรวจสอบความพร้อมของสคริปต์ทันที
+        window.onload = function() {
             if (typeof liff !== "undefined") {
-                // 🛠️ แก้ไข: ลบ withLoginOnStart ออกเพื่อป้องกันระบบแอปบน Android ค้าง
                 liff.init({ liffId: MY_LIFF_ID })
                     .then(() => {
-                        // เช็คสถานะการเข้าสู่ระบบแบบปกติ
                         if (liff.isLoggedIn()) {
                             openSharePicker();
                         } else {
@@ -41,16 +42,16 @@
                         }
                     })
                     .catch((err) => {
-                        document.getElementById("title-text").innerText = "❌ เชื่อมต่อไม่สำเร็จ";
-                        document.getElementById("status-text").innerText = "ระบบสคริปต์ LINE ขัดข้อง: " + err;
+                        document.getElementById("title-text").innerText = "❌ เกิดข้อผิดพลาด";
+                        document.getElementById("status-text").innerText = "LINE Init ขัดข้อง: " + err;
                         showBackupButton();
                     });
             } else {
                 document.getElementById("title-text").innerText = "❌ เกิดข้อผิดพลาด";
-                document.getElementById("status-text").innerText = "ไม่สามารถโหลดระบบความปลอดภัยของ LINE ได้";
+                document.getElementById("status-text").innerText = "แอปบล็อกการโหลดสคริปต์ความปลอดภัยของ LINE";
                 showBackupButton();
             }
-        });
+        };
 
         function openSharePicker() {
             if (liff.isApiAvailable('shareTargetPicker')) {
@@ -62,7 +63,6 @@
                 ])
                 .then((res) => {
                     if (res) {
-                        // เมื่อแชร์เรียบร้อย ให้ปิดหน้าต่าง Browser ทันที
                         liff.closeWindow(); 
                     } else {
                         document.getElementById("title-text").innerText = "ยกเลิกการทำงาน";
