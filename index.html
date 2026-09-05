@@ -14,46 +14,47 @@
         .btn-share { background-color: #1DB446; color: white; border: none; padding: 14px 28px; font-size: 16px; font-weight: bold; border-radius: 50px; cursor: pointer; width: 100%; box-shadow: 0 4px 10px rgba(29, 180, 70, 0.3); margin-top: 20px; display: block; margin-left: auto; margin-right: auto; }
     </style>
     
-    <!-- 🟢 ใช้ SDK มาตรฐานของ LINE ตัวเดียวกับที่แอปพลิเคชันทุกระบบรองรับอย่างเสถียร -->
+    <!-- โหลดสคริปต์ความปลอดภัยมาตรฐานของ LINE ไว้ด้านบนสุด -->
     <script src="https://line-scdn.net"></script>
+    <script>
+        const MY_LIFF_ID = "2011437100-YADN8PIm"; 
+
+        // 🟢 บังคับสั่งรันระบบเริ่มต้นความปลอดภัยทันทีที่หน้าเว็บโหลดตัวแปรเสร็จ
+        liff.init({ liffId: MY_LIFF_ID })
+            .then(function() {
+                console.log("LIFF ready");
+            })
+            .catch(function(err) {
+                console.log("LIFF error", err);
+            });
+    </script>
 </head>
 <body>
 
     <div class="card">
         <div class="loader" id="loading-icon"></div>
         <h2 id="title-text">🔄 ระบบส่งต่อข้อความ</h2>
-        <p id="status-text">กำลังดึงข้อมูลรายชื่อเพื่อน...</p>
-        <!-- 🟢 ตั้งค่าปุ่มแชร์สำรองให้สามารถคลิกได้ทันทีโดยไม่ต้องรอด่านตรวจสอบโหลดค้าง -->
+        <p id="status-text">ระบบพร้อมทำงานแล้ว กรุณากดปุ่มสีเขียวด้านล่าง</p>
         <button class="btn-share" id="share-btn" onclick="openSharePicker()">🟢 คลิกเปิดหน้าต่างแชร์เพื่อน</button>
     </div>
 
     <script>
-        const MY_LIFF_ID = "2011437100-YADN8PIm"; 
-
-        // สั่งเคลียร์วงล้อหมุนล่วงหน้าเพื่อให้ปุ่มเปิดพร้อมกดได้แน่นอนบน Android
+        // ปิดวงล้อหมุนล่วงหน้าเพื่อให้ปุ่มเปิดใช้งานได้แน่นอนบน Android
         document.addEventListener("DOMContentLoaded", function() {
-            setTimeout(function() {
-                document.getElementById("loading-icon").style.display = "none";
-                document.getElementById("status-text").innerText = "ระบบพร้อมทำงานแล้ว กรุณากดปุ่มสีเขียวด้านล่าง";
-            }, 1000);
-            
-            // สั่งรันเปิดสิทธิ์ล่วงหน้าแบบ Async
-            if (typeof liff !== "undefined") {
-                liff.init({ liffId: MY_LIFF_ID }).catch(function(err) {
-                    console.log("Init log: ", err);
-                });
-            }
+            document.getElementById("loading-icon").style.display = "none";
         });
 
         function openSharePicker() {
-            // ดักเช็คตัวแปรแบบปลอดภัยสูงสุด
-            if (typeof liff === "undefined") {
-                alert("แอปพลิเคชัน LINE กำลังโหลดสิทธิ์ในเครื่อง กรุณารอ 2 วินาทีแล้วกดปุ่มสีเขียวใหม่อีกครั้งครับ");
+            // ดักเช็คและแก้ไขระบบเรียกใช้งาน Object แบบตรงข้ามเพื่อเลี่ยงการบล็อกสิทธิ์
+            const currentLiff = window.liff || liff;
+
+            if (typeof currentLiff === "undefined" || !currentLiff.shareTargetPicker) {
+                alert("ตัวแอป LINE บนเครื่องยังโหลดสิทธิ์ความปลอดภัยไม่สมบูรณ์ กรุณาปิดหน้านี้แล้วลองกดเปิดใหม่อีกครั้งครับ");
                 return;
             }
 
-            // บังคับยิงโครงสร้างคำสั่งเปิดแชร์รายชื่อเพื่อนตรง ๆ ทันทีที่ผู้ใช้คลิก
-            liff.shareTargetPicker([
+            // สั่งยิงโครงสร้างคำสั่งเปิดหน้ารายชื่อเพื่อนทันที
+            currentLiff.shareTargetPicker([
                 {
                     "type": "flex",
                     "altText": "🔔 แจ้งชำระเงิน ยอด ฿60,000",
@@ -82,36 +83,36 @@
                                 },
                                 { "type": "separator" },
                                 {
-                                        "type": "box",
-                                        "layout": "vertical",
-                                        "spacing": "xs",
-                                        "contents": [
-                                            {
-                                                "type": "box",
-                                                "layout": "horizontal",
-                                                "contents": [
-                                                    { "type": "text", "text": "👤 ผู้แจ้ง:", "size": "xs", "color": "#666666", "flex": 2 },
-                                                    { "type": "text", "text": "P'Lek", "size": "xs", "color": "#111111", "flex": 3, "weight": "bold" }
-                                                ]
-                                            },
-                                            {
-                                                "type": "box",
-                                                "layout": "horizontal",
-                                                "contents": [
-                                                    { "type": "text", "text": "🏦 โอนเข้า:", "size": "xs", "color": "#666666", "flex": 2 },
-                                                    { "type": "text", "text": "บิลเลี่ยนแนร์ Kbank", "size": "xs", "color": "#111111", "flex": 3 }
-                                                ]
-                                            },
-                                            {
-                                                "type": "box",
-                                                "layout": "horizontal",
-                                                "contents": [
-                                                    { "type": "text", "text": "📅 วัน/เวลา:", "size": "xs", "color": "#666666", "flex": 2 },
-                                                    { "type": "text", "text": "2026-09-01 12:00", "size": "xs", "color": "#111111", "flex": 3 }
-                                                ]
-                                            }
-                                        ]
-                                    },
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "spacing": "xs",
+                                    "contents": [
+                                        {
+                                            "type": "box",
+                                            "layout": "horizontal",
+                                            "contents": [
+                                                { "type": "text", "text": "👤 ผู้แจ้ง:", "size": "xs", "color": "#666666", "flex": 2 },
+                                                { "type": "text", "text": "P'Lek", "size": "xs", "color": "#111111", "flex": 3, "weight": "bold" }
+                                            ]
+                                        },
+                                        {
+                                            "type": "box",
+                                            "layout": "horizontal",
+                                            "contents": [
+                                                { "type": "text", "text": "🏦 โอนเข้า:", "size": "xs", "color": "#666666", "flex": 2 },
+                                                { "type": "text", "text": "บิลเลี่ยนแนร์ Kbank", "size": "xs", "color": "#111111", "flex": 3 }
+                                            ]
+                                        },
+                                        {
+                                            "type": "box",
+                                            "layout": "horizontal",
+                                            "contents": [
+                                                { "type": "text", "text": "📅 วัน/เวลา:", "size": "xs", "color": "#666666", "flex": 2 },
+                                                { "type": "text", "text": "2026-09-01 12:00", "size": "xs", "color": "#111111", "flex": 3 }
+                                            ]
+                                        }
+                                    ]
+                                },
                                 { "type": "separator" },
                                 { "type": "text", "text": "📦 รายการอ้างอิงสินค้า", "weight": "bold", "size": "xs", "color": "#666666" },
                                 {
@@ -138,11 +139,11 @@
             ])
             .then(function(res) {
                 if (res) {
-                    liff.closeWindow(); // ส่งแชร์เรียบร้อย ทำการปิดหน้าระบบทันที
+                    currentLiff.closeWindow(); // ส่งเสร็จสิ้นทำการปิดหน้าต่างทันที
                 }
             })
             .catch(function(error) {
-                alert("ระบบแจ้งข้อขัดข้อง: " + error.message);
+                alert("ระบบแจ้งข้อผิดพลาด: " + error.message);
             });
         }
     </script>
