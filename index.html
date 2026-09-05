@@ -13,6 +13,7 @@
         p { color: #666; font-size: 15px; line-height: 1.5; }
         .btn-share { background-color: #1DB446; color: white; border: none; padding: 14px 28px; font-size: 16px; font-weight: bold; border-radius: 50px; cursor: pointer; width: 100%; box-shadow: 0 4px 10px rgba(29, 180, 70, 0.3); margin-top: 20px; display: block; margin-left: auto; margin-right: auto; }
     </style>
+    <!-- โหลดสคริปต์ความปลอดภัย LINE สำรองผ่านระบบ Unpkg เพื่อให้เสถียรบนมือถือ -->
     <script src="https://unpkg.com"></script>
 </head>
 <body>
@@ -20,7 +21,7 @@
     <div class="card">
         <div class="loader" id="loading-icon"></div>
         <h2 id="title-text">🔄 ระบบส่งต่อข้อความ</h2>
-        <p id="status-text">ระบบความปลอดภัยพร้อมใช้งานแล้ว...</p>
+        <p id="status-text">ระบบกำลังเตรียมหน้าต่างรายชื่อ...</p>
         <button class="btn-share" id="share-btn" onclick="openSharePicker()">🟢 คลิกเปิดหน้าต่างแชร์เพื่อน</button>
     </div>
 
@@ -33,13 +34,9 @@
             if (typeof liffObj !== "undefined") {
                 liffObj.init({ liffId: MY_LIFF_ID })
                     .then(function() {
-                        // ปิดวงล้อหมุนทันทีก่อนเพื่อแจ้งผู้ใช้งาน
+                        // ปิดวงล้อหมุน และเปิดสิทธิ์ให้ใช้งานปุ่มกดสีเขียวทันที
                         document.getElementById("loading-icon").style.display = "none";
-                        document.getElementById("status-text").innerText = "กรุณากดปุ่มสีเขียวด้านล่างเพื่อเลือกเพื่อนที่ต้องการส่งต่อ";
-                        
-                        if (!liffObj.isLoggedIn()) {
-                            liffObj.login();
-                        }
+                        document.getElementById("status-text").innerText = "ระบบ LINE เชื่อมต่อสำเร็จแล้ว กรุณากดปุ่มสีเขียวเพื่อเลือกรายชื่อเพื่อน";
                     })
                     .catch(function(err) {
                         document.getElementById("title-text").innerText = "❌ เกิดข้อผิดพลาด";
@@ -51,12 +48,8 @@
         function openSharePicker() {
             const liffObj = window.liff || liff;
             
-            if (typeof liffObj === "undefined" || !liffObj.isLoggedIn()) {
-                alert("ระบบล็อกอินของ LINE ยังไม่พร้อมใช้งาน กรุณารอสักครู่แล้วกดใหม่อีกครั้ง");
-                return;
-            }
-
-            if (liffObj.isApiAvailable('shareTargetPicker')) {
+            // 🟢 ปรับปรุง: ตัดระบบเช็ค isLoggedIn ซ้ำซ้อนออก เพื่อให้คำสั่งยิงเข้ากล่องรายชื่อเพื่อนตรง ๆ ทันที
+            if (typeof liffObj !== "undefined") {
                 liffObj.shareTargetPicker([
                     {
                         "type": "flex",
@@ -142,14 +135,14 @@
                 ])
                 .then(function(res) {
                     if (res) {
-                        liffObj.closeWindow(); // ส่งข้อมูลสำเร็จทำการปิดหน้าต่างทันที
+                        liffObj.closeWindow(); // เมื่อกดแชร์ให้เพื่อนเรียบร้อย สั่งให้ปิดหน้าต่างเว็บทันที
                     }
                 })
                 .catch(function(error) {
-                    alert("การส่งต่อแชร์ติดขัด: " + error.message);
+                    alert("ขั้นตอนแชร์ติดขัด: " + error.message);
                 });
             } else {
-                alert("สิทธิ์ shareTargetPicker ยังไม่เปิดในระบบ LINE Console");
+                alert("ระบบเบราว์เซอร์ไม่พร้อมใช้งาน");
             }
         }
     </script>
