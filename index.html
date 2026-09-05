@@ -13,8 +13,6 @@
         p { color: #666; font-size: 15px; line-height: 1.5; }
         .btn-share { background-color: #1DB446; color: white; border: none; padding: 14px 28px; font-size: 16px; font-weight: bold; border-radius: 50px; cursor: pointer; width: 100%; box-shadow: 0 4px 10px rgba(29, 180, 70, 0.3); margin-top: 20px; display: block; margin-left: auto; margin-right: auto; }
     </style>
-
-    <!-- 🟢 เปลี่ยนมาใช้ลิงก์สำรองผ่านเครือข่ายความปลอดภัยความเร็วสูงเพื่อไม่ให้แอป LINE บล็อก -->
     <script src="https://unpkg.com"></script>
 </head>
 <body>
@@ -22,42 +20,42 @@
     <div class="card">
         <div class="loader" id="loading-icon"></div>
         <h2 id="title-text">🔄 ระบบส่งต่อข้อความ</h2>
-        <p id="status-text">กำลังเรียกเปิดระบบแชร์รายชื่อของ LINE กรุณารอสักครู่...</p>
+        <p id="status-text">ระบบความปลอดภัยพร้อมใช้งานแล้ว...</p>
         <button class="btn-share" id="share-btn" onclick="openSharePicker()">🟢 คลิกเปิดหน้าต่างแชร์เพื่อน</button>
     </div>
 
     <script>
         const MY_LIFF_ID = "2011437100-YADN8PIm"; 
 
-        // ตรวจสอบระบบความพร้อมผ่านตัวแปรหลัก
         window.onload = function() {
-            // เช็คตัวแปรของทาง Unpkg SDK สำรอง
             const liffObj = window.liff || liff;
             
             if (typeof liffObj !== "undefined") {
                 liffObj.init({ liffId: MY_LIFF_ID })
                     .then(function() {
+                        // ปิดวงล้อหมุนทันทีก่อนเพื่อแจ้งผู้ใช้งาน
                         document.getElementById("loading-icon").style.display = "none";
-                        document.getElementById("status-text").innerText = "ระบบ LINE เชื่อมต่อสำเร็จแล้ว...";
+                        document.getElementById("status-text").innerText = "กรุณากดปุ่มสีเขียวด้านล่างเพื่อเลือกเพื่อนที่ต้องการส่งต่อ";
                         
-                        if (liffObj.isLoggedIn()) {
-                            openSharePicker();
-                        } else {
+                        if (!liffObj.isLoggedIn()) {
                             liffObj.login();
                         }
                     })
                     .catch(function(err) {
                         document.getElementById("title-text").innerText = "❌ เกิดข้อผิดพลาด";
-                        document.getElementById("status-text").innerText = "Init ล้มเหลว: " + err;
+                        document.getElementById("status-text").innerText = "การเชื่อมต่อระบบล้มเหลว: " + err;
                     });
-            } else {
-                document.getElementById("title-text").innerText = "❌ เกิดข้อผิดพลาด";
-                document.getElementById("status-text").innerText = "ไม่สามารถเปิดระบบความปลอดภัยสำรองได้";
             }
         };
 
         function openSharePicker() {
             const liffObj = window.liff || liff;
+            
+            if (typeof liffObj === "undefined" || !liffObj.isLoggedIn()) {
+                alert("ระบบล็อกอินของ LINE ยังไม่พร้อมใช้งาน กรุณารอสักครู่แล้วกดใหม่อีกครั้ง");
+                return;
+            }
+
             if (liffObj.isApiAvailable('shareTargetPicker')) {
                 liffObj.shareTargetPicker([
                     {
@@ -144,14 +142,14 @@
                 ])
                 .then(function(res) {
                     if (res) {
-                        liffObj.closeWindow(); 
+                        liffObj.closeWindow(); // ส่งข้อมูลสำเร็จทำการปิดหน้าต่างทันที
                     }
                 })
                 .catch(function(error) {
-                    alert("ขั้นตอนแชร์ติดขัด: " + error.message);
+                    alert("การส่งต่อแชร์ติดขัด: " + error.message);
                 });
             } else {
-                alert("กรุณาเปิดสิทธิ์ shareTargetPicker ใน LINE Console");
+                alert("สิทธิ์ shareTargetPicker ยังไม่เปิดในระบบ LINE Console");
             }
         }
     </script>
