@@ -19,13 +19,13 @@
     <script>
         const MY_LIFF_ID = "2011437100-YADN8PIm"; 
 
-        // 🟢 บังคับสั่งรันระบบเริ่มต้นความปลอดภัยทันทีที่หน้าเว็บโหลดตัวแปรเสร็จ
+        // เริ่มต้นระบบความปลอดภัยทันทีที่เปิดหน้าเว็บ
         liff.init({ liffId: MY_LIFF_ID })
-            .then(function() {
-                console.log("LIFF ready");
+            .then(() => {
+                console.log("LIFF initialized successfully");
             })
-            .catch(function(err) {
-                console.log("LIFF error", err);
+            .catch((err) => {
+                console.error("LIFF initialization failed", err);
             });
     </script>
 </head>
@@ -39,112 +39,108 @@
     </div>
 
     <script>
-        // ปิดวงล้อหมุนล่วงหน้าเพื่อให้ปุ่มเปิดใช้งานได้แน่นอนบน Android
-        document.addEventListener("DOMContentLoaded", function() {
+        // ปิดวงล้อหมุนเมื่อโครงสร้างหน้าจอพร้อม
+        document.addEventListener("DOMContentLoaded", () => {
             document.getElementById("loading-icon").style.display = "none";
         });
 
         function openSharePicker() {
-            // ดักเช็คและแก้ไขระบบเรียกใช้งาน Object แบบตรงข้ามเพื่อเลี่ยงการบล็อกสิทธิ์
-            const currentLiff = window.liff || liff;
-
-            if (typeof currentLiff === "undefined" || !currentLiff.shareTargetPicker) {
-                alert("ตัวแอป LINE บนเครื่องยังโหลดสิทธิ์ความปลอดภัยไม่สมบูรณ์ กรุณาปิดหน้านี้แล้วลองกดเปิดใหม่อีกครั้งครับ");
-                return;
-            }
-
-            // สั่งยิงโครงสร้างคำสั่งเปิดหน้ารายชื่อเพื่อนทันที
-            currentLiff.shareTargetPicker([
-                {
-                    "type": "flex",
-                    "altText": "🔔 แจ้งชำระเงิน ยอด ฿60,000",
-                    "contents": {
-                        "type": "bubble",
-                        "header": {
-                            "type": "box",
-                            "layout": "vertical",
-                            "backgroundColor": "#1DB446",
-                            "contents": [
-                                { "type": "text", "text": "🔔 แจ้งชำระเงินใหม่", "weight": "bold", "size": "lg", "color": "#ffffff" }
-                            ]
-                        },
-                        "body": {
-                            "type": "box",
-                            "layout": "vertical",
-                            "spacing": "md",
-                            "contents": [
-                                {
-                                    "type": "box",
-                                    "layout": "horizontal",
-                                    "contents": [
-                                        { "type": "text", "text": "ยอดชำระเงิน:", "size": "sm", "color": "#666666", "flex": 2, "weight": "bold" },
-                                        { "type": "text", "text": "฿60,000", "weight": "bold", "size": "xl", "color": "#1DB446", "flex": 3, "align": "end" }
-                                    ]
-                                },
-                                { "type": "separator" },
-                                {
-                                    "type": "box",
-                                    "layout": "vertical",
-                                    "spacing": "xs",
-                                    "contents": [
-                                        {
-                                            "type": "box",
-                                            "layout": "horizontal",
-                                            "contents": [
-                                                { "type": "text", "text": "👤 ผู้แจ้ง:", "size": "xs", "color": "#666666", "flex": 2 },
-                                                { "type": "text", "text": "P'Lek", "size": "xs", "color": "#111111", "flex": 3, "weight": "bold" }
-                                            ]
-                                        },
-                                        {
-                                            "type": "box",
-                                            "layout": "horizontal",
-                                            "contents": [
-                                                { "type": "text", "text": "🏦 โอนเข้า:", "size": "xs", "color": "#666666", "flex": 2 },
-                                                { "type": "text", "text": "บิลเลี่ยนแนร์ Kbank", "size": "xs", "color": "#111111", "flex": 3 }
-                                            ]
-                                        },
-                                        {
-                                            "type": "box",
-                                            "layout": "horizontal",
-                                            "contents": [
-                                                { "type": "text", "text": "📅 วัน/เวลา:", "size": "xs", "color": "#666666", "flex": 2 },
-                                                { "type": "text", "text": "2026-09-01 12:00", "size": "xs", "color": "#111111", "flex": 3 }
-                                            ]
-                                        }
-                                    ]
-                                },
-                                { "type": "separator" },
-                                { "type": "text", "text": "📦 รายการอ้างอิงสินค้า", "weight": "bold", "size": "xs", "color": "#666666" },
-                                {
-                                    "type": "box",
-                                    "layout": "vertical",
-                                    "margin": "md",
-                                    "contents": [
-                                        { "type": "text", "text": "👤 ลค: CCCCCCC (DO: -)", "weight": "bold", "size": "sm", "color": "#111111" }
-                                    ]
-                                },
-                                {
-                                    "type": "box",
-                                    "layout": "horizontal",
-                                    "margin": "xs",
-                                    "contents": [
-                                        { "type": "text", "text": "  • GKK24 (4 แคปซูล) (x300)", "size": "xs", "color": "#555555", "flex": 3, "wrap": true },
-                                        { "type": "text", "text": "฿60,000.00", "size": "xs", "color": "#111111", "align": "end", "weight": "bold", "flex": 2 }
-                                    ]
-                                }
-                            ]
+            // เรียกใช้สคริปต์หลักผ่านรูปแบบ Arrow Function ป้องกันคำสั่งหลุดทำงานบน Android
+            if (typeof liff !== "undefined" && liff.isApiAvailable('shareTargetPicker')) {
+                liff.shareTargetPicker([
+                    {
+                        "type": "flex",
+                        "altText": "🔔 แจ้งชำระเงิน ยอด ฿60,000",
+                        "contents": {
+                            "type": "bubble",
+                            "header": {
+                                "type": "box",
+                                "layout": "vertical",
+                                "backgroundColor": "#1DB446",
+                                "contents": [
+                                    { "type": "text", "text": "🔔 แจ้งชำระเงินใหม่", "weight": "bold", "size": "lg", "color": "#ffffff" }
+                                ]
+                            },
+                            "body": {
+                                "type": "box",
+                                "layout": "vertical",
+                                "spacing": "md",
+                                "contents": [
+                                    {
+                                        "type": "box",
+                                        "layout": "horizontal",
+                                        "contents": [
+                                            { "type": "text", "text": "ยอดชำระเงิน:", "size": "sm", "color": "#666666", "flex": 2, "weight": "bold" },
+                                            { "type": "text", "text": "฿60,000", "weight": "bold", "size": "xl", "color": "#1DB446", "flex": 3, "align": "end" }
+                                        ]
+                                    },
+                                    { "type": "separator" },
+                                    {
+                                        "type": "box",
+                                        "layout": "vertical",
+                                        "spacing": "xs",
+                                        "contents": [
+                                            {
+                                                "type": "box",
+                                                "layout": "horizontal",
+                                                "contents": [
+                                                    { "type": "text", "text": "👤 ผู้แจ้ง:", "size": "xs", "color": "#666666", "flex": 2 },
+                                                    { "type": "text", "text": "P'Lek", "size": "xs", "color": "#111111", "flex": 3, "weight": "bold" }
+                                                ]
+                                            },
+                                            {
+                                                "type": "box",
+                                                "layout": "horizontal",
+                                                "contents": [
+                                                    { "type": "text", "text": "🏦 โอนเข้า:", "size": "xs", "color": "#666666", "flex": 2 },
+                                                    { "type": "text", "text": "บิลเลี่ยนแนร์ Kbank", "size": "xs", "color": "#111111", "flex": 3 }
+                                                ]
+                                            },
+                                            {
+                                                "type": "box",
+                                                "layout": "horizontal",
+                                                "contents": [
+                                                    { "type": "text", "text": "📅 วัน/เวลา:", "size": "xs", "color": "#666666", "flex": 2 },
+                                                    { "type": "text", "text": "2026-09-01 12:00", "size": "xs", "color": "#111111", "flex": 3 }
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                    { "type": "separator" },
+                                    { "type": "text", "text": "📦 รายการอ้างอิงสินค้า", "weight": "bold", "size": "xs", "color": "#666666" },
+                                    {
+                                        "type": "box",
+                                        "layout": "vertical",
+                                        "margin": "md",
+                                        "contents": [
+                                            { "type": "text", "text": "👤 ลค: CCCCCCC (DO: -)", "weight": "bold", "size": "sm", "color": "#111111" }
+                                        ]
+                                    },
+                                    {
+                                        "type": "box",
+                                        "layout": "horizontal",
+                                        "margin": "xs",
+                                        "contents": [
+                                            { "type": "text", "text": "  • GKK24 (4 แคปซูล) (x300)", "size": "xs", "color": "#555555", "flex": 3, "wrap": true },
+                                            { "type": "text", "text": "฿60,000.00", "size": "xs", "color": "#111111", "align": "end", "weight": "bold", "flex": 2 }
+                                        ]
+                                    }
+                                ]
+                            }
                         }
                     }
-                }
-            ])
-            .then(function(res) {
-                if (res) {
-                    currentLiff.closeWindow(); // ส่งเสร็จสิ้นทำการปิดหน้าต่างทันที
-                }
-            })
-            .catch(function(error) {
-                alert("ระบบแจ้งข้อผิดพลาด: " + error.message);
-            });
+                ])
+                .then((res) => {
+                    if (res) {
+                        liff.closeWindow(); // แชร์ข้อความสำเร็จ ปิดหน้าต่าง LIFF ทันที
+                    }
+                })
+                .catch((error) => {
+                    alert("เกิดปัญหาในการส่งข้อมูลแชร์: " + error.message);
+                });
+            } else {
+                alert("ระบบความปลอดภัยหรือสิทธิ์ความพร้อมของแอป LINE ยังไม่สมบูรณ์");
+            }
         }
     </script>
 </body>
