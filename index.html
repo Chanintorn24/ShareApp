@@ -14,33 +14,53 @@
         .btn-share { background-color: #1DB446; color: white; border: none; padding: 14px 28px; font-size: 16px; font-weight: bold; border-radius: 50px; cursor: pointer; width: 100%; box-shadow: 0 4px 10px rgba(29, 180, 70, 0.3); margin-top: 20px; display: block; margin-left: auto; margin-right: auto; transition: 0.3s; }
         .btn-share:disabled { background-color: #ccc; box-shadow: none; cursor: not-allowed; }
     </style>
-    
-    <script charset="utf-8" src="https://line-scdn.net"></script>
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
 <body>
 
     <div class="card">
         <div class="loader" id="loading-icon" style="display: block;"></div>
         <h2 id="title-text">🔄 ระบบส่งต่อข้อความ</h2>
-        <p id="status-text">กำลังโหลดระบบความปลอดภัย กรุณารอสักครู่...</p>
+        <p id="status-text">กำลังโหลดข้อมูลและระบบความปลอดภัย...</p>
         <button class="btn-share" id="share-btn" onclick="openSharePicker()" disabled>⏳ รอระบบประมวลผล</button>
     </div>
 
     <script>
         const MY_LIFF_ID = "2011437100-YADN8PIm"; 
+        let billData = null;
+
+        // ดึงและถอดรหัสข้อมูลจาก URL ทันทีที่โหลดหน้าเว็บ
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const dataParam = urlParams.get('data');
+            
+            if (dataParam) {
+                try {
+                    billData = JSON.parse(decodeURIComponent(dataParam));
+                } catch(e) {
+                    console.error("รูปแบบข้อมูลบิลผิดพลาด", e);
+                }
+            }
+        });
 
         liff.init({ liffId: MY_LIFF_ID }).then(function() {
             if (!liff.isLoggedIn()) {
                 liff.login();
             } else {
                 document.getElementById('loading-icon').style.display = 'none';
+                
+                if (!billData) {
+                    document.getElementById('status-text').innerText = '❌ ไม่พบข้อมูลบิล กรุณากดแชร์จากปุ่มในการ์ดใหม่อีกครั้ง';
+                    document.getElementById('status-text').style.color = 'red';
+                    return; // หยุดการทำงานถ้าไม่มีข้อมูลส่งมา
+                }
+
                 document.getElementById('status-text').innerText = 'ระบบพร้อมใช้งาน เลือกรายชื่อผู้รับได้เลย';
                 const shareBtn = document.getElementById('share-btn');
                 shareBtn.innerText = '🟢 คลิกเปิดหน้าต่างแชร์เพื่อน';
                 shareBtn.disabled = false;
             }
         }).catch(function(err) {
-            console.error("LIFF Init Failed", err);
             document.getElementById('status-text').innerText = 'ระบบมีปัญหา ไม่สามารถเชื่อมต่อ LINE ได้';
             document.getElementById('loading-icon').style.display = 'none';
         });
@@ -50,99 +70,77 @@
                 alert("แอป LINE ของคุณเวอร์ชันเก่า หรือไม่รองรับการแชร์");
                 return;
             }
+            if (!billData) return;
 
-            // 🟢 ดึงค่าพารามิเตอร์อัตโนมัติจาก URL ที่ส่งมาจาก code.gs
-            const urlParams = new URLSearchParams(window.location.search);
-            const amount = urlParams.get('amount') || "60,000"; // ยอดเงินโอน (ถ้าไม่มีจะใช้ 60,000)
-            const customer = urlParams.get('cus') || "CCCCCC";   // ชื่อลูกค้า (ถ้าไม่มีจะใช้ CCCCCC)
+            // 1. สร้างโครงสร้างสินค้าแบบไดนามิก
+            let productContents = [];
+            if (billData.refs && billData.refs.length > 0) {
+                billData.refs.forEach(ref => {
+                    productContents.push({
+                        "type": "box", "layout": "vertical", "margin": "md",
+                        "contents": [{ "type": "text", "text": `👤 ลค: ${ref.c} (DO: ${ref.do})`, "weight": "bold", "size": "sm", "color": "#111111", "wrap": true }]
+                    });
+                    if (ref.p && ref.p.length > 0) {
+                        ref.p.forEach(prod => {
+                            productContents.push({
+                                "type": "box", "layout": "horizontal", "margin": "xs",
+                                "contents": [
+                                    { "type": "text", "text": `  • ${prod.n} (x${prod.q})`, "size": "xs", "color": "#555555", "flex": 3, "wrap": true },
+                                    { "type": "text", "text": `฿${prod.t}`, "size": "xs", "color": "#111111", "align": "end", "weight": "bold", "flex": 2 }
+                                ]
+                            });
+                        });
+                    }
+                });
+            } else {
+                productContents.push({
+                    "type": "box", "layout": "vertical", "margin": "md",
+                    "contents": [{ "type": "text", "text": "(ไม่มีรายการสินค้า)", "size": "sm", "style": "italic", "color": "#aaaaaa" }]
+                });
+            }
 
-            liff.shareTargetPicker([
-                {
-                    "type": "flex",
-                    "altText": "🔔 แจ้งชำระเงิน ยอด ฿" + amount,
-                    "contents": {
-                        "type": "bubble",
-                        "header": {
-                            "type": "box",
-                            "layout": "vertical",
-                            "backgroundColor": "#1DB446",
-                            "contents": [
-                                { "type": "text", "text": "🔔 แจ้งชำระเงินใหม่", "weight": "bold", "size": "md", "color": "#ffffff" }
-                            ]
-                        },
-                        "body": {
-                            "type": "box",
-                            "layout": "vertical",
-                            "spacing": "md",
-                            "contents": [
-                                {
-                                    "type": "box",
-                                    "layout": "horizontal",
-                                    "contents": [
-                                        { "type": "text", "text": "ยอดชำระเงิน:", "size": "sm", "color": "#666666", "weight": "bold" },
-                                        { "type": "text", "text": "฿" + amount, "weight": "bold", "size": "lg", "color": "#1DB446", "align": "end" }
-                                    ]
-                                },
-                                { "type": "separator" },
-                                {
-                                    "type": "box",
-                                    "layout": "vertical",
-                                    "spacing": "xs",
-                                    "contents": [
-                                        {
-                                            "type": "box",
-                                            "layout": "horizontal",
-                                            "contents": [
-                                                { "type": "text", "text": "👤 ผู้แจ้ง:", "size": "xs", "color": "#666666" },
-                                                { "type": "text", "text": "P'Lek", "size": "xs", "color": "#111111", "align": "end", "weight": "bold" }
-                                            ]
-                                        },
-                                        {
-                                            "type": "box",
-                                            "layout": "horizontal",
-                                            "contents": [
-                                                { "type": "text", "text": "🏦 โอนเข้า:", "size": "xs", "color": "#666666" },
-                                                { "type": "text", "text": "บิลเลี่ยนแนร์ Kbank", "size": "xs", "color": "#111111", "align": "end" }
-                                            ]
-                                        },
-                                        {
-                                            "type": "box",
-                                            "layout": "horizontal",
-                                            "contents": [
-                                                { "type": "text", "text": "📅 วัน/เวลา:", "size": "xs", "color": "#666666" },
-                                                { "type": "text", "text": "2026-09-01 12:00", "size": "xs", "color": "#111111", "align": "end" }
-                                            ]
-                                        }
-                                    ]
-                                },
-                                { "type": "separator" },
-                                { "type": "text", "text": "📦 รายการอ้างอิงสินค้า", "weight": "bold", "size": "xs", "color": "#666666" },
-                                {
-                                    "type": "box",
-                                    "layout": "vertical",
-                                    "contents": [
-                                        { "type": "text", "text": "👤 ลค: " + customer + " (DO: -)", "weight": "bold", "size": "sm", "color": "#111111" }
-                                    ]
-                                },
-                                {
-                                    "type": "box",
-                                    "layout": "horizontal",
-                                    "contents": [
-                                        { "type": "text", "text": "  • GKK24 (4 แคปซูล) (x300)", "size": "xs", "color": "#555555" },
-                                        { "type": "text", "text": "฿" + amount + ".00", "size": "xs", "color": "#111111", "align": "end", "weight": "bold" }
-                                    ]
-                                }
-                            ]
-                        }
+            // 2. ประกอบ Flex Message โดยฝังข้อมูลที่ดึงมาจากตัวแปร billData
+            const dynamicFlex = {
+                "type": "flex",
+                "altText": `🔔 แจ้งชำระเงิน ยอด ฿${billData.amt}`,
+                "contents": {
+                    "type": "bubble",
+                    "header": {
+                        "type": "box", "layout": "vertical", "backgroundColor": "#1DB446",
+                        "contents": [{ "type": "text", "text": "🔔 แจ้งชำระเงินใหม่", "weight": "bold", "size": "md", "color": "#ffffff" }]
+                    },
+                    "body": {
+                        "type": "box", "layout": "vertical", "spacing": "md",
+                        "contents": [
+                            {
+                                "type": "box", "layout": "horizontal",
+                                "contents": [
+                                    { "type": "text", "text": "ยอดชำระเงิน:", "size": "sm", "color": "#666666", "weight": "bold" },
+                                    { "type": "text", "text": `฿${billData.amt}`, "weight": "bold", "size": "lg", "color": "#1DB446", "align": "end" }
+                                ]
+                            },
+                            { "type": "separator" },
+                            {
+                                "type": "box", "layout": "vertical", "spacing": "xs",
+                                "contents": [
+                                    { "type": "box", "layout": "horizontal", "contents": [{ "type": "text", "text": "👤 ผู้แจ้ง:", "size": "xs", "color": "#666666", "flex": 2 }, { "type": "text", "text": String(billData.rep), "size": "xs", "color": "#111111", "align": "end", "weight": "bold", "flex": 3, "wrap": true }] },
+                                    { "type": "box", "layout": "horizontal", "contents": [{ "type": "text", "text": "🏦 โอนเข้า:", "size": "xs", "color": "#666666", "flex": 2 }, { "type": "text", "text": String(billData.bnk), "size": "xs", "color": "#111111", "align": "end", "flex": 3, "wrap": true }] },
+                                    { "type": "box", "layout": "horizontal", "contents": [{ "type": "text", "text": "📅 วัน/เวลา:", "size": "xs", "color": "#666666", "flex": 2 }, { "type": "text", "text": String(billData.dt), "size": "xs", "color": "#111111", "align": "end", "flex": 3 }] },
+                                    { "type": "box", "layout": "horizontal", "contents": [{ "type": "text", "text": "💳 ช่องทางชำระ:", "size": "xs", "color": "#666666", "flex": 2 }, { "type": "text", "text": String(billData.pm), "size": "xs", "color": "#111111", "align": "end", "flex": 3, "wrap": true }] }
+                                ]
+                            },
+                            { "type": "separator" },
+                            { "type": "text", "text": "📦 รายการอ้างอิงสินค้า", "weight": "bold", "size": "xs", "color": "#666666" },
+                            { "type": "box", "layout": "vertical", "spacing": "xs", "contents": productContents }
+                        ]
                     }
                 }
-            ])
-            .then(function(res) {
-                if (res) liff.closeWindow(); 
-            })
-            .catch(function(error) {
-                console.error(error);
-            });
+            };
+
+            // โยนเข้า Picker
+            liff.shareTargetPicker([dynamicFlex])
+            .then(function(res) { if (res) liff.closeWindow(); })
+            .catch(function(error) { console.error(error); });
         }
     </script>
 </body>
