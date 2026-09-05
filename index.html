@@ -19,63 +19,72 @@
     <div class="card">
         <div class="loader" id="loading-icon"></div>
         <h2 id="title-text">🔄 ระบบส่งต่อข้อความ</h2>
-        <p id="status-text">กำลังเริ่มต้นระบบความปลอดภัย LINE...</p>
-        <button class="btn-share" id="share-btn" onclick="openSharePicker()">🟢 คลิกเปิดหน้าต่างแชร์เพื่อน</button>
+        <p id="status-text">กำลังเปิดหน้าต่างเลือกผู้รับในแอป LINE...</p>
+        <button class="btn-share" id="share-btn" style="display: none;" onclick="openSharePicker()">🟢 คลิกเปิดหน้าต่างแชร์เพื่อน</button>
     </div>
 
+    <!-- เรียกใช้สคริปต์เวอร์ชันล่าสุดของ LINE SDK -->
     <script src="https://line-scdn.net"></script>
     <script>
         const MY_LIFF_ID = "2011437100-YADN8PIm"; 
 
-        // สั่งให้ปุ่มแชร์เปิดโชว์รอไว้เลย เผื่อกรณีระบบโหลดอัตโนมัติค้าง
         document.addEventListener("DOMContentLoaded", function() {
-            setTimeout(function() {
-                document.getElementById("status-text").innerText = "หากหน้าต่างไม่เปิดอัตโนมัติ กรุณากดปุ่มสีเขียวด้านล่าง";
-                document.getElementById("loading-icon").style.display = "none";
-            }, 1500);
-
             if (typeof liff !== "undefined") {
-                // บังคับ liff.init ใหม่แบบไม่สนแคชเดิม
-                liff.init({ liffId: MY_LIFF_ID, withLoginOnStart: true })
+                // 🛠️ แก้ไข: ลบ withLoginOnStart ออกเพื่อป้องกันระบบแอปบน Android ค้าง
+                liff.init({ liffId: MY_LIFF_ID })
                     .then(() => {
-                        document.getElementById("status-text").innerText = "เชื่อมต่อระบบ LINE สำเร็จ กำลังเปิดหน้าต่างแชร์...";
-                        // ลองสั่งเปิดหน้าแชร์อัตโนมัติทันที
-                        openSharePicker();
+                        // เช็คสถานะการเข้าสู่ระบบแบบปกติ
+                        if (liff.isLoggedIn()) {
+                            openSharePicker();
+                        } else {
+                            liff.login();
+                        }
                     })
                     .catch((err) => {
-                        document.getElementById("title-text").innerText = "❌ Init ไม่สำเร็จ";
-                        document.getElementById("status-text").innerText = "ข้อผิดพลาดระบบ: " + err;
+                        document.getElementById("title-text").innerText = "❌ เชื่อมต่อไม่สำเร็จ";
+                        document.getElementById("status-text").innerText = "ระบบสคริปต์ LINE ขัดข้อง: " + err;
+                        showBackupButton();
                     });
             } else {
                 document.getElementById("title-text").innerText = "❌ เกิดข้อผิดพลาด";
-                document.getElementById("status-text").innerText = "ไม่สามารถโหลด SDK ของ LINE ได้";
+                document.getElementById("status-text").innerText = "ไม่สามารถโหลดระบบความปลอดภัยของ LINE ได้";
+                showBackupButton();
             }
         });
 
         function openSharePicker() {
-            if (typeof liff === "undefined" || !liff.isLoggedIn()) {
-                alert("ระบบ LINE ยังไม่พร้อมใช้งาน หรือยังไม่ได้เข้าสู่ระบบ");
-                return;
-            }
-
             if (liff.isApiAvailable('shareTargetPicker')) {
                 liff.shareTargetPicker([
                     {
                         "type": "text",
-                        "text": "🔔 แจ้งตรวจสอบข้อมูลชำระเงินใหม่\n\nกรุณาคลิกดูรายละเอียดผ่านลิงก์บันทึกข้อมูลธุรกรรม:\nhttps://liff.line.me/" + MY_LIFF_ID
+                        "text": "🔔 แจ้งตรวจสอบข้อมูลชำระเงินใหม่\n\nกรุณาคลิกดูรายละเอียดผ่านลิงก์บันทึกข้อมูลธุรกรรม:\nhttps://line.me"
                     }
                 ])
                 .then((res) => {
                     if (res) {
-                        liff.closeWindow(); // แชร์เสร็จปิดหน้าเว็บทันที
+                        // เมื่อแชร์เรียบร้อย ให้ปิดหน้าต่าง Browser ทันที
+                        liff.closeWindow(); 
+                    } else {
+                        document.getElementById("title-text").innerText = "ยกเลิกการทำงาน";
+                        document.getElementById("status-text").innerText = "คุณได้ยกเลิกขั้นตอนการส่งต่อข้อความ";
+                        showBackupButton();
                     }
                 })
                 .catch((error) => {
-                    alert("เกิดข้อผิดพลาดในการแชร์: " + error.message);
+                    document.getElementById("title-text").innerText = "พบข้อผิดพลาด";
+                    document.getElementById("status-text").innerText = "เกิดปัญหาในขั้นตอนแชร์: " + error.message;
+                    showBackupButton();
                 });
             } else {
-                alert("ฟังก์ชันแชร์นี้ไม่รองรับบนอุปกรณ์ของคุณ หรือคุณยังไม่ได้เปิดสิทธิ์ shareTargetPicker ใน LINE Console");
+                document.getElementById("title-text").innerText = "ระบบไม่รองรับ";
+                document.getElementById("status-text").innerText = "ฟังก์ชันแชร์นี้ไม่รองรับบนอุปกรณ์หรือบัญชีนี้";
+                showBackupButton();
             }
+        }
+
+        function showBackupButton() {
+            document.getElementById("share-btn").style.display = "block";
+            document.getElementById("loading-icon").style.display = "none";
         }
     </script>
 </body>
