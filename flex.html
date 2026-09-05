@@ -17,24 +17,28 @@
 <body>
 
     <div class="card">
-        <h2>🔄 ระบบส่งต่อข้อความ (v14)</h2>
-        <p id="status-text">กำลังเริ่มต้นเชื่อมต่อระบบความปลอดภัย LINE...</p>
+        <h2>🔄 ระบบส่งต่อข้อความ (v15)</h2>
+        <p id="status-text">กำลังเชื่อมต่อยืนยันสิทธิ์แชร์ผ่าน LINE...</p>
         <div class="loader" id="loading-icon"></div>
         <button class="btn-share" id="share-btn" style="display: none;" onclick="triggerLiffSharePicker()">🟢 กดเลือกห้องแชทเพื่อแชร์ต่อ</button>
     </div>
 
-    <!-- นำเข้าสคริปต์ทางการของ LINE ผ่านช่องทางหลักที่เสถียรที่สุด -->
+    <!-- 🛠️ 1. โหลดสคริปต์ความปลอดภัยหลักของ LINE ผ่าน CDN สาธารณะที่สมบูรณ์ที่สุด -->
     <script src="https://line-scdn.net"></script>
 
     <script>
-        // รหัส LIFF ID ของคุณที่ถูกต้องแม่นยำ
+        // รหัส LIFF ID ของคุณที่ตรวจสอบความปลอดภัยเรียบร้อยแล้ว
         const MY_LIFF_ID = "2011437100-YADN8PIm"; 
 
+        // 🛠️ 2. ฟังก์ชันเริ่มงานแบบคลีนและปลอดภัยสูงสุดสำหรับมือถือ Android
         async function startAppPipeline() {
             try {
-                // เปลี่ยนข้อความทันทีเพื่อยืนยันว่าฟังก์ชันเริ่มรันงานแล้ว
-                document.getElementById("status-text").innerText = "จับสัญญาณระบบสำเร็จ กำลังยืนยันสิทธิ์แชร์...";
-                
+                if (typeof liff === 'undefined') {
+                    document.getElementById("status-text").innerHTML = "<span class='error-text'>ไม่พบสคริปต์ระบบ กรุณากดปุ่มเปิดใหม่อีกครั้ง</span>";
+                    document.getElementById("loading-icon").style.display = "none";
+                    return;
+                }
+
                 // สั่งเปิดระบบสิทธิ์ร่วมกับแอปพลิเคชัน LINE
                 await liff.init({ liffId: MY_LIFF_ID });
 
@@ -100,20 +104,12 @@
             }
         }
 
-        // 🛠️ วิธีแก้ดักด่านค้าง: สร้างระบบตรวจสอบไฟล์สคริปต์ พร้อมหน่วงเวลาปลอดภัย (Safe-Delay) ให้เบราว์เซอร์เตรียมความพร้อมก่อนทำงาน
-        function checkAndExecute() {
-            if (typeof liff !== 'undefined') {
-                document.getElementById("status-text").innerText = "พบสัญญาณระบบหลัก กำลังเตรียมสิทธิ์โครงสร้าง...";
-                // หน่วงเวลาความปลอดภัย 500 มิลลิวินาที (ครึ่งวินาที) เพื่อให้แน่ใจว่าปลั๊กอินทั้งหมดของ LINE โหลดเข้าหน่วยความจำเครื่องพร้อมรันงานแล้ว
-                setTimeout(startAppPipeline, 500);
-            } else {
-                // หากยังโหลดไม่เสร็จสิ้น ให้รอจังหวะใหม่ในอีก 100 มิลลิวินาที
-                setTimeout(checkAndExecute, 100);
-            }
+        // 🛠️ 3. สั่งรันฟังก์ชันทันทีเมื่อสคริปต์หน้าจอพร้อมประมวลผล (ตัดปัญหาลูปหน่วงเวลาค้าง)
+        if (document.readyState === "complete" || document.readyState === "interactive") {
+            startAppPipeline();
+        } else {
+            document.addEventListener("DOMContentLoaded", startAppPipeline);
         }
-
-        // สั่งเปิดระบบตรวจสอบทันทีที่ตัวเครื่องอ่านข้อมูล
-        checkAndExecute();
     </script>
 </body>
 </html>
