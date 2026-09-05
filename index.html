@@ -11,7 +11,7 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         h2 { margin-top: 0; color: #111; font-size: 22px; }
         p { color: #666; font-size: 15px; line-height: 1.5; }
-        .btn-share { background-color: #1DB446; color: white; border: none; padding: 14px 28px; font-size: 16px; font-weight: bold; border-radius: 50px; cursor: pointer; width: 100%; box-shadow: 0 4px 10px rgba(29, 180, 70, 0.3); margin-top: 20px; display: none; margin-left: auto; margin-right: auto; }
+        .btn-share { background-color: #1DB446; color: white; border: none; padding: 14px 28px; font-size: 16px; font-weight: bold; border-radius: 50px; cursor: pointer; width: 100%; box-shadow: 0 4px 10px rgba(29, 180, 70, 0.3); margin-top: 20px; display: block; margin-left: auto; margin-right: auto; }
     </style>
 </head>
 <body>
@@ -20,7 +20,7 @@
         <div class="loader" id="loading-icon"></div>
         <h2 id="title-text">🔄 ระบบส่งต่อข้อความ</h2>
         <p id="status-text">กำลังเรียกเปิดระบบแชร์รายชื่อของ LINE กรุณารอสักครู่...</p>
-        <button class="btn-share" id="share-btn" onclick="openSharePicker()">🟢 คลิกเปิดหน้าต่างแชร์เพื่อนอีกครั้ง</button>
+        <button class="btn-share" id="share-btn" style="display: none;" onclick="openSharePicker()">🟢 คลิกเปิดหน้าต่างแชร์เพื่อนอีกครั้ง</button>
     </div>
 
     <script src="https://line-scdn.net"></script>
@@ -32,7 +32,6 @@
                 liff.init({ liffId: MY_LIFF_ID })
                     .then(() => {
                         if (liff.isLoggedIn()) {
-                            // 🛠️ ปรับปรุง: หน่วงเวลา 500ms เพื่อให้ UI ของ Android บิวต์หน้าจอทัน ป้องกันอาการค้างหมุน
                             setTimeout(openSharePicker, 500);
                         } else {
                             liff.login();
@@ -50,13 +49,63 @@
 
         function openSharePicker() {
             if (liff.isApiAvailable('shareTargetPicker')) {
-                // ปรับสถานะข้อความบอกผู้ใช้
-                document.getElementById("status-text").innerText = "ระบบความปลอดภัยพร้อมใช้งานแล้ว...";
-                
+                // โครงสร้างการ์ด Flex Message แจ้งโอนเงินแบบสวยงามและปิดการแสดงผลรูปสลิปในหัวการ์ด
                 liff.shareTargetPicker([
                     {
-                        "type": "text",
-                        "text": "🔔 แจ้งตรวจสอบข้อมูลชำระเงินใหม่\n\nกรุณาคลิกดูรายละเอียดผ่านลิงก์บันทึกข้อมูลธุรกรรม:\nhttps://liff.line.me/2011437100-YADN8PIm"
+                        "type": "flex",
+                        "altText": "🔔 แจ้งชำระเงิน ยอด ฿60,000",
+                        "contents": {
+                          "type": "bubble",
+                          "header": {
+                            "type": "box", "layout": "vertical", "backgroundColor": "#1DB446",
+                            "contents": [{ "type": "text", "text": "🔔 แจ้งชำระเงินใหม่ (แชร์ต่อ)", "weight": "bold", "size": "lg", "color": "#ffffff" }]
+                          },
+                          "body": {
+                            "type": "box", "layout": "vertical", "spacing": "md",
+                            "contents": [
+                              {
+                                "type": "box", "layout": "horizontal",
+                                "contents": [
+                                  { "type": "text", "text": "ยอดชำระเงิน:", "size": "sm", "color": "#666666", "flex": 2, "weight": "bold" },
+                                  { "type": "text", "text": "฿60,000", "weight": "bold", "size": "xl", "color": "#1DB446", "flex": 3, "align": "end" }
+                                ]
+                              },
+                              { "type": "separator" },
+                              {
+                                "type": "box", "layout": "vertical", "spacing": "xs",
+                                "contents": [
+                                  { "type": "box", "layout": "horizontal", "contents": [
+                                    { "type": "text", "text": "👤 ผู้แจ้ง:", "size": "xs", "color": "#666666", "flex": 2 },
+                                    { "type": "text", "text": "P'Lek", "size": "xs", "color": "#111111", "flex": 3, "wrap": true, "weight": "bold" }
+                                  ]},
+                                  { "type": "box", "layout": "horizontal", "contents": [
+                                    { "type": "text", "text": "🏦 โอนเข้า:", "size": "xs", "color": "#666666", "flex": 2 },
+                                    { "type": "text", "text": "บิลเลี่ยนแนร์ Kbank", "size": "xs", "color": "#111111", "flex": 3, "wrap": true }
+                                  ]},
+                                  { "type": "box", "layout": "horizontal", "contents": [
+                                    { "type": "text", "text": "📅 วัน/เวลา:", "size": "xs", "color": "#666666", "flex": 2 },
+                                    { "type": "text", "text": "2026-09-01 12:00", "size": "xs", "color": "#111111", "flex": 3 }
+                                  ]}
+                                ]
+                              },
+                              { "type": "separator" },
+                              { "type": "text", "text": "📦 รายการอ้างอิงสินค้า", "weight": "bold", "size": "xs", "color": "#666666" },
+                              {
+                                "type": "box", "layout": "vertical", "margin": "md",
+                                "contents": [
+                                  { "type": "text", "text": "👤 ลค: CCCCCCC (DO: -)", "weight": "bold", "size": "sm", "color": "#111111", "wrap": true }
+                                ]
+                              },
+                              {
+                                "type": "box", "layout": "horizontal", "margin": "xs",
+                                "contents": [
+                                  { "type": "text", "text": "  • GKK24 (4 แคปซูล) (x300)", "size": "xs", "color": "#555555", "flex": 3, "wrap": true },
+                                  { "type": "text", "text": "฿60,000.00", "size": "xs", "color": "#111111", "align": "end", "weight": "bold", "flex": 2 }
+                                ]
+                              }
+                            ]
+                          }
+                        }
                     }
                 ])
                 .then((res) => {
@@ -75,7 +124,7 @@
                 });
             } else {
                 document.getElementById("title-text").innerText = "ระบบไม่รองรับ";
-                document.getElementById("status-text").innerText = "ฟังก์ชันแชร์นี้ไม่รองรับบนอุปกรณ์หรือบัญชีนี้";
+                document.getElementById("status-text").innerText = "กรุณาเปิดสิทธิ์ shareTargetPicker ใน LINE Console และบันทึกข้อมูลก่อน";
                 showBackupButton();
             }
         }
