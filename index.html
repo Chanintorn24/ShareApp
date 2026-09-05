@@ -4,10 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ระบบส่งต่อข้อความแจ้งชำระเงิน</title>
-    
-    <!-- ย้ายมาไว้ใน head และเปลี่ยนไปใช้ไฟล์ SDK เวอร์ชันคงที่เพื่อเสถียรภาพบน Android -->
-    <script src="https://line-scdn.net"></script>
-    
     <style>
         body { font-family: sans-serif; text-align: center; padding: 50px 20px; color: #333; background-color: #f4f7f6; margin: 0; }
         .card { background: white; padding: 40px 30px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); max-width: 400px; margin: auto; }
@@ -23,15 +19,17 @@
     <div class="card">
         <div class="loader" id="loading-icon"></div>
         <h2 id="title-text">🔄 ระบบส่งต่อข้อความ</h2>
-        <p id="status-text">กำลังเปิดหน้าต่างเลือกผู้รับในแอป LINE...</p>
+        <p id="status-text">กำลังเรียกเปิดระบบแชร์รายชื่อของ LINE กรุณารอสักครู่...</p>
         <button class="btn-share" id="share-btn" style="display: none;" onclick="openSharePicker()">🟢 คลิกเปิดหน้าต่างแชร์เพื่อน</button>
     </div>
 
+    <!-- 🟢 ปรับกลับมาใช้ตัวยิงตรงหลักของ LINE เพื่อให้แอปยอมรับการเชื่อมต่อตามสิทธิ์ความปลอดภัย -->
+    <script src="https://line-scdn.net"></script>
     <script>
         const MY_LIFF_ID = "2011437100-YADN8PIm"; 
 
-        // ตรวจสอบความพร้อมของสคริปต์ทันที
-        window.onload = function() {
+        function initLIFF() {
+            // ดักเช็คว่าแอปโหลดตัวแปรของ LINE สำเร็จหรือไม่
             if (typeof liff !== "undefined") {
                 liff.init({ liffId: MY_LIFF_ID })
                     .then(() => {
@@ -47,11 +45,10 @@
                         showBackupButton();
                     });
             } else {
-                document.getElementById("title-text").innerText = "❌ เกิดข้อผิดพลาด";
-                document.getElementById("status-text").innerText = "แอปบล็อกการโหลดสคริปต์ความปลอดภัยของ LINE";
-                showBackupButton();
+                // หากรันด่านแรกไม่ผ่าน ให้ทำการสั่งเปิดรีรันคำสั่งตรวจสอบซ้ำภายใน 300 มิลลิวินาที 
+                setTimeout(initLIFF, 300);
             }
-        };
+        }
 
         function openSharePicker() {
             if (liff.isApiAvailable('shareTargetPicker')) {
@@ -86,6 +83,9 @@
             document.getElementById("share-btn").style.display = "block";
             document.getElementById("loading-icon").style.display = "none";
         }
+
+        // สั่งให้เริ่มรันกระบวนการตรวจจับสิทธิ์ทันที
+        initLIFF();
     </script>
 </body>
 </html>
