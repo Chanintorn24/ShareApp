@@ -93,7 +93,7 @@
                             productContents.push({
                                 "type": "box", "layout": "horizontal", "margin": "xs",
                                 "contents": [
-                                    { "type": "text", "text": `  • ${prod.n} (x${prod.q})`, "size": "xs", "color": "#555555", "flex": 3, "wrap": true },
+                                    { "type": "text", "text": `  • ${prod.n} (x${prod.q})${prod.f ? " แถม" : ""}`, "size": "xs", "color": "#555555", "flex": 3, "wrap": true },
                                     { "type": "text", "text": `฿${prod.t}`, "size": "xs", "color": "#111111", "align": "end", "weight": "bold", "flex": 2 }
                                 ]
                             });
