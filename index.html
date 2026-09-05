@@ -13,72 +13,75 @@
         p { color: #666; font-size: 15px; line-height: 1.5; }
         .btn-share { background-color: #1DB446; color: white; border: none; padding: 14px 28px; font-size: 16px; font-weight: bold; border-radius: 50px; cursor: pointer; width: 100%; box-shadow: 0 4px 10px rgba(29, 180, 70, 0.3); margin-top: 20px; display: block; margin-left: auto; margin-right: auto; }
     </style>
-    <!-- โหลดสคริปต์ความปลอดภัย LINE สำรองผ่านระบบ Unpkg เพื่อให้เสถียรบนมือถือ -->
-    <script src="https://unpkg.com"></script>
+    
+    <!-- 🟢 ใช้ SDK มาตรฐานของ LINE ตัวเดียวกับที่แอปพลิเคชันทุกระบบรองรับอย่างเสถียร -->
+    <script src="https://line-scdn.net"></script>
 </head>
 <body>
 
     <div class="card">
         <div class="loader" id="loading-icon"></div>
         <h2 id="title-text">🔄 ระบบส่งต่อข้อความ</h2>
-        <p id="status-text">ระบบกำลังเตรียมหน้าต่างรายชื่อ...</p>
+        <p id="status-text">กำลังดึงข้อมูลรายชื่อเพื่อน...</p>
+        <!-- 🟢 ตั้งค่าปุ่มแชร์สำรองให้สามารถคลิกได้ทันทีโดยไม่ต้องรอด่านตรวจสอบโหลดค้าง -->
         <button class="btn-share" id="share-btn" onclick="openSharePicker()">🟢 คลิกเปิดหน้าต่างแชร์เพื่อน</button>
     </div>
 
     <script>
         const MY_LIFF_ID = "2011437100-YADN8PIm"; 
 
-        window.onload = function() {
-            const liffObj = window.liff || liff;
+        // สั่งเคลียร์วงล้อหมุนล่วงหน้าเพื่อให้ปุ่มเปิดพร้อมกดได้แน่นอนบน Android
+        document.addEventListener("DOMContentLoaded", function() {
+            setTimeout(function() {
+                document.getElementById("loading-icon").style.display = "none";
+                document.getElementById("status-text").innerText = "ระบบพร้อมทำงานแล้ว กรุณากดปุ่มสีเขียวด้านล่าง";
+            }, 1000);
             
-            if (typeof liffObj !== "undefined") {
-                liffObj.init({ liffId: MY_LIFF_ID })
-                    .then(function() {
-                        // ปิดวงล้อหมุน และเปิดสิทธิ์ให้ใช้งานปุ่มกดสีเขียวทันที
-                        document.getElementById("loading-icon").style.display = "none";
-                        document.getElementById("status-text").innerText = "ระบบ LINE เชื่อมต่อสำเร็จแล้ว กรุณากดปุ่มสีเขียวเพื่อเลือกรายชื่อเพื่อน";
-                    })
-                    .catch(function(err) {
-                        document.getElementById("title-text").innerText = "❌ เกิดข้อผิดพลาด";
-                        document.getElementById("status-text").innerText = "การเชื่อมต่อระบบล้มเหลว: " + err;
-                    });
+            // สั่งรันเปิดสิทธิ์ล่วงหน้าแบบ Async
+            if (typeof liff !== "undefined") {
+                liff.init({ liffId: MY_LIFF_ID }).catch(function(err) {
+                    console.log("Init log: ", err);
+                });
             }
-        };
+        });
 
         function openSharePicker() {
-            const liffObj = window.liff || liff;
-            
-            // 🟢 ปรับปรุง: ตัดระบบเช็ค isLoggedIn ซ้ำซ้อนออก เพื่อให้คำสั่งยิงเข้ากล่องรายชื่อเพื่อนตรง ๆ ทันที
-            if (typeof liffObj !== "undefined") {
-                liffObj.shareTargetPicker([
-                    {
-                        "type": "flex",
-                        "altText": "🔔 แจ้งชำระเงิน ยอด ฿60,000",
-                        "contents": {
-                            "type": "bubble",
-                            "header": {
-                                "type": "box",
-                                "layout": "vertical",
-                                "backgroundColor": "#1DB446",
-                                "contents": [
-                                    { "type": "text", "text": "🔔 แจ้งชำระเงินใหม่", "weight": "bold", "size": "lg", "color": "#ffffff" }
-                                ]
-                            },
-                            "body": {
-                                "type": "box",
-                                "layout": "vertical",
-                                "spacing": "md",
-                                "contents": [
-                                    {
-                                        "type": "box",
-                                        "layout": "horizontal",
-                                        "contents": [
-                                            { "type": "text", "text": "ยอดชำระเงิน:", "size": "sm", "color": "#666666", "flex": 2, "weight": "bold" },
-                                            { "type": "text", "text": "฿60,000", "weight": "bold", "size": "xl", "color": "#1DB446", "flex": 3, "align": "end" }
-                                        ]
-                                    },
-                                    { "type": "separator" },
-                                    {
+            // ดักเช็คตัวแปรแบบปลอดภัยสูงสุด
+            if (typeof liff === "undefined") {
+                alert("แอปพลิเคชัน LINE กำลังโหลดสิทธิ์ในเครื่อง กรุณารอ 2 วินาทีแล้วกดปุ่มสีเขียวใหม่อีกครั้งครับ");
+                return;
+            }
+
+            // บังคับยิงโครงสร้างคำสั่งเปิดแชร์รายชื่อเพื่อนตรง ๆ ทันทีที่ผู้ใช้คลิก
+            liff.shareTargetPicker([
+                {
+                    "type": "flex",
+                    "altText": "🔔 แจ้งชำระเงิน ยอด ฿60,000",
+                    "contents": {
+                        "type": "bubble",
+                        "header": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "backgroundColor": "#1DB446",
+                            "contents": [
+                                { "type": "text", "text": "🔔 แจ้งชำระเงินใหม่", "weight": "bold", "size": "lg", "color": "#ffffff" }
+                            ]
+                        },
+                        "body": {
+                            "type": "box",
+                            "layout": "vertical",
+                            "spacing": "md",
+                            "contents": [
+                                {
+                                    "type": "box",
+                                    "layout": "horizontal",
+                                    "contents": [
+                                        { "type": "text", "text": "ยอดชำระเงิน:", "size": "sm", "color": "#666666", "flex": 2, "weight": "bold" },
+                                        { "type": "text", "text": "฿60,000", "weight": "bold", "size": "xl", "color": "#1DB446", "flex": 3, "align": "end" }
+                                    ]
+                                },
+                                { "type": "separator" },
+                                {
                                         "type": "box",
                                         "layout": "vertical",
                                         "spacing": "xs",
@@ -109,41 +112,38 @@
                                             }
                                         ]
                                     },
-                                    { "type": "separator" },
-                                    { "type": "text", "text": "📦 รายการอ้างอิงสินค้า", "weight": "bold", "size": "xs", "color": "#666666" },
-                                    {
-                                        "type": "box",
-                                        "layout": "vertical",
-                                        "margin": "md",
-                                        "contents": [
-                                            { "type": "text", "text": "👤 ลค: CCCCCCC (DO: -)", "weight": "bold", "size": "sm", "color": "#111111" }
-                                        ]
-                                    },
-                                    {
-                                        "type": "box",
-                                        "layout": "horizontal",
-                                        "margin": "xs",
-                                        "contents": [
-                                            { "type": "text", "text": "  • GKK24 (4 แคปซูล) (x300)", "size": "xs", "color": "#555555", "flex": 3, "wrap": true },
-                                            { "type": "text", "text": "฿60,000.00", "size": "xs", "color": "#111111", "align": "end", "weight": "bold", "flex": 2 }
-                                        ]
-                                    }
-                                ]
-                            }
+                                { "type": "separator" },
+                                { "type": "text", "text": "📦 รายการอ้างอิงสินค้า", "weight": "bold", "size": "xs", "color": "#666666" },
+                                {
+                                    "type": "box",
+                                    "layout": "vertical",
+                                    "margin": "md",
+                                    "contents": [
+                                        { "type": "text", "text": "👤 ลค: CCCCCCC (DO: -)", "weight": "bold", "size": "sm", "color": "#111111" }
+                                    ]
+                                },
+                                {
+                                    "type": "box",
+                                    "layout": "horizontal",
+                                    "margin": "xs",
+                                    "contents": [
+                                        { "type": "text", "text": "  • GKK24 (4 แคปซูล) (x300)", "size": "xs", "color": "#555555", "flex": 3, "wrap": true },
+                                        { "type": "text", "text": "฿60,000.00", "size": "xs", "color": "#111111", "align": "end", "weight": "bold", "flex": 2 }
+                                    ]
+                                }
+                            ]
                         }
                     }
-                ])
-                .then(function(res) {
-                    if (res) {
-                        liffObj.closeWindow(); // เมื่อกดแชร์ให้เพื่อนเรียบร้อย สั่งให้ปิดหน้าต่างเว็บทันที
-                    }
-                })
-                .catch(function(error) {
-                    alert("ขั้นตอนแชร์ติดขัด: " + error.message);
-                });
-            } else {
-                alert("ระบบเบราว์เซอร์ไม่พร้อมใช้งาน");
-            }
+                }
+            ])
+            .then(function(res) {
+                if (res) {
+                    liff.closeWindow(); // ส่งแชร์เรียบร้อย ทำการปิดหน้าระบบทันที
+                }
+            })
+            .catch(function(error) {
+                alert("ระบบแจ้งข้อขัดข้อง: " + error.message);
+            });
         }
     </script>
 </body>
