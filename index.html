@@ -14,16 +14,8 @@
         .btn-share { background-color: #1DB446; color: white; border: none; padding: 14px 28px; font-size: 16px; font-weight: bold; border-radius: 50px; cursor: pointer; width: 100%; box-shadow: 0 4px 10px rgba(29, 180, 70, 0.3); margin-top: 20px; display: block; margin-left: auto; margin-right: auto; }
     </style>
     
-    <!-- เรียกใช้งานคลังคำสั่งความปลอดภัยหลักจากเซิร์ฟเวอร์ LINE -->
+    <!-- โหลดคลังคำสั่งสิทธิ์ความปลอดภัยหลักตรงจาก LINE -->
     <script src="https://line-scdn.net"></script>
-    <script>
-        const MY_LIFF_ID = "2011437100-YADN8PIm"; 
-
-        // เริ่มรันระบบเชื่อมโยง Token ล่วงหน้าทันทีที่เปิดหน้าเว็บ
-        liff.init({ liffId: MY_LIFF_ID })
-            .then(() => { console.log("LIFF Connected"); })
-            .catch((err) => { console.error("LIFF Init Error: ", err); });
-    </script>
 </head>
 <body>
 
@@ -35,13 +27,21 @@
     </div>
 
     <script>
+        const MY_LIFF_ID = "2011437100-YADN8PIm"; 
+
+        // 🟢 บังคับสั่งรันระบบเริ่มต้นความปลอดภัยแบบ Global ตั้งแต่วินาทีแรกเพื่อให้ Android ผ่านฉลุย
+        liff.init({ liffId: MY_LIFF_ID })
+            .then(() => { console.log("LIFF Init Success"); })
+            .catch((err) => { console.error("LIFF Init Failed", err); });
+
         function openSharePicker() {
+            // 🛠️ ตรวจสอบตัวแปรความพร้อมแบบปลอดภัยสูงสุด
             if (typeof liff === "undefined") {
-                alert("ระบบในเครื่องกำลังประมวลผลสิทธิ์ กรุณารอ 1 วินาทีแล้วกดใหม่อีกครั้งครับ");
+                alert("ระบบกำลังเรียกสิทธิ์ในเครื่อง กรุณารอ 1 วินาทีแล้วกดใหม่อีกครั้งครับ");
                 return;
             }
 
-            // 🟢 ส่งโครงสร้าง Flex Message แจ้งโอนเงินแบบ Clean JSON ที่แก้ไขจุดพิมพ์สัญลักษณ์ผิดพลาดแล้ว
+            // 🟢 แก้ไขคำศัพท์: เปลี่ยนมาใช้สิทธิ์ผ่านตัวแปรหลัก liff ตรง ๆ ป้องกันอาการเออร์เรอร์และจอมืดค้างบน Android
             liff.shareTargetPicker([
                 {
                     "type": "flex",
@@ -125,11 +125,11 @@
             ])
             .then((res) => {
                 if (res) {
-                    liff.closeWindow(); // แชร์ข้อความเสร็จสิ้น บังคับปิดหน้าระบบทันที
+                    liff.closeWindow(); // แชร์ข้อความเสร็จ บังคับปิดหน้าระบบทันที
                 }
             })
             .catch((error) => {
-                alert("โครงสร้างการแชร์ผิดพลาด: " + error.message);
+                alert("โครงสร้างผิดพลาด: " + error.message);
             });
         }
     </script>
