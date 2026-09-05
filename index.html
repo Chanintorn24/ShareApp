@@ -11,131 +11,148 @@
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         h2 { margin-top: 0; color: #111; font-size: 22px; }
         p { color: #666; font-size: 15px; line-height: 1.5; }
-        .btn-share { background-color: #1DB446; color: white; border: none; padding: 14px 28px; font-size: 16px; font-weight: bold; border-radius: 50px; cursor: pointer; width: 100%; box-shadow: 0 4px 10px rgba(29, 180, 70, 0.3); margin-top: 20px; display: block; margin-left: auto; margin-right: auto; }
+        .btn-share { background-color: #1DB446; color: white; border: none; padding: 14px 28px; font-size: 16px; font-weight: bold; border-radius: 50px; cursor: pointer; width: 100%; box-shadow: 0 4px 10px rgba(29, 180, 70, 0.3); margin-top: 20px; display: block; margin-left: auto; margin-right: auto; transition: 0.3s; }
+        .btn-share:disabled { background-color: #ccc; box-shadow: none; cursor: not-allowed; }
     </style>
     
-    <!-- ดึงคลังคำสั่งสิทธิ์ความปลอดภัยหลักตรงจาก LINE -->
-    <script src="https://line-scdn.net"></script>
-    <script>
-        const MY_LIFF_ID = "2011437100-YADN8PIm"; 
-
-        // บังคับสั่งรันระบบเริ่มต้นความปลอดภัยแบบ Global ตั้งแต่วินาทีแรกเพื่อให้ผ่านระบบ Android
-        liff.init({ liffId: MY_LIFF_ID })
-            .then(() => { console.log("LIFF Init Success"); })
-            .catch((err) => { console.error("LIFF Init Failed", err); });
-    </script>
+    <!-- โหลด LIFF SDK ที่ถูกต้อง -->
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 </head>
 <body>
 
     <div class="card">
-        <div class="loader" id="loading-icon"></div>
+        <div class="loader" id="loading-icon" style="display: block;"></div>
         <h2 id="title-text">🔄 ระบบส่งต่อข้อความ</h2>
-        <p id="status-text">ระบบความปลอดภัยพร้อมใช้งานแล้ว กรุณาเปิดปุ่มสีเขียวเพื่อส่งต่อการ์ดข้อมูล</p>
-        <button class="btn-share" id="share-btn" onclick="openSharePicker()">🟢 คลิกเปิดหน้าต่างแชร์เพื่อน</button>
+        <p id="status-text">กำลังโหลดระบบความปลอดภัย กรุณารอสักครู่...</p>
+        <button class="btn-share" id="share-btn" onclick="openSharePicker()" disabled>⏳ รอระบบประมวลผล</button>
     </div>
 
     <script>
-        function openSharePicker() {
-            if (typeof liff === "undefined") {
-                alert("ระบบกำลังเรียกสิทธิ์ความปลอดภัยในเครื่อง กรุณารอสักครู่แล้วลองกดใหม่อีกครั้งครับ");
+        const MY_LIFF_ID = "2011437100-YADN8PIm"; 
+
+        // เริ่มต้นการทำงานแบบ Async เพื่อจัดการลำดับให้ถูกต้อง
+        async function initializeLiff() {
+            try {
+                await liff.init({ liffId: MY_LIFF_ID });
+                
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                    return;
+                }
+
+                // เมื่อระบบพร้อม ค่อยเปิดให้ปุ่มทำงาน
+                document.getElementById('loading-icon').style.display = 'none';
+                document.getElementById('status-text').innerText = 'ระบบความปลอดภัยพร้อมใช้งานแล้ว กรุณากดปุ่มสีเขียวด้านล่างเพื่อเลือกรายชื่อผู้รับ';
+                
+                const shareBtn = document.getElementById('share-btn');
+                shareBtn.innerText = '🟢 คลิกเปิดหน้าต่างแชร์เพื่อน';
+                shareBtn.disabled = false;
+
+            } catch (err) {
+                console.error("LIFF Init Failed", err);
+                document.getElementById('status-text').innerText = 'เกิดข้อผิดพลาดในการเชื่อมต่อระบบ LINE';
+                document.getElementById('loading-icon').style.display = 'none';
+            }
+        }
+
+        initializeLiff();
+
+        async function openSharePicker() {
+            // ตรวจสอบว่าฟีเจอร์แชร์ถูกรองรับหรือไม่
+            if (!liff.isApiAvailable('shareTargetPicker')) {
+                alert("แอป LINE ของคุณเวอร์ชันเก่า หรือไม่รองรับการแชร์ (Share Target Picker)");
                 return;
             }
 
-            // 🟢 ฟังก์ชัน Dynamic ดึงค่าพารามิเตอร์แปรผันจาก URL มาใช้งานบนตัวการ์ดโดยอัตโนมัติ
-            const urlParams = new URLSearchParams(window.location.search);
-            const amount = urlParams.get('amount') || "60,000"; // ดึงยอดโอน หากไม่มีให้ใช้ค่าเริ่มต้น 60,000
-            const customer = urlParams.get('cus') || "CCCCCCC"; // ดึงชื่อลูกค้า 
-
-            // ยิงคำสั่งดึงหน้ารายชื่อเพื่อนตรงๆ ทันทีเพื่อส่งการ์ด Flex Message
-            liff.shareTargetPicker([
-                {
-                    "type": "flex",
-                    "altText": "🔔 แจ้งชำระเงิน ยอด ฿" + amount,
-                    "contents": {
-                        "type": "bubble",
-                        "header": {
-                            "type": "box",
-                            "layout": "vertical",
-                            "backgroundColor": "#1DB446",
-                            "contents": [
-                                { "type": "text", "text": "🔔 แจ้งชำระเงินใหม่", "weight": "bold", "size": "md", "color": "#ffffff" }
-                            ]
-                        },
-                        "body": {
-                            "type": "box",
-                            "layout": "vertical",
-                            "spacing": "md",
-                            "contents": [
-                                {
-                                    "type": "box",
-                                    "layout": "horizontal",
-                                    "contents": [
-                                        { "type": "text", "text": "ยอดชำระเงิน:", "size": "sm", "color": "#666666", "weight": "bold" },
-                                        { "type": "text", "text": "฿" + amount, "weight": "bold", "size": "lg", "color": "#1DB446", "align": "end" }
-                                    ]
-                                },
-                                { "type": "separator" },
-                                {
-                                    "type": "box",
-                                    "layout": "vertical",
-                                    "spacing": "xs",
-                                    "contents": [
-                                        {
-                                            "type": "box",
-                                            "layout": "horizontal",
-                                            "contents": [
-                                                { "type": "text", "text": "👤 ผู้แจ้ง:", "size": "xs", "color": "#666666" },
-                                                { "type": "text", "text": "P'Lek", "size": "xs", "color": "#111111", "align": "end", "weight": "bold" }
-                                            ]
-                                        },
-                                        {
-                                            "type": "box",
-                                            "layout": "horizontal",
-                                            "contents": [
-                                                { "type": "text", "text": "🏦 โอนเข้า:", "size": "xs", "color": "#666666" },
-                                                { "type": "text", "text": "บิลเลี่ยนแนร์ Kbank", "size": "xs", "color": "#111111", "align": "end" }
-                                            ]
-                                        },
-                                        {
-                                            "type": "box",
-                                            "layout": "horizontal",
-                                            "contents": [
-                                                { "type": "text", "text": "📅 วัน/เวลา:", "size": "xs", "color": "#666666" },
-                                                { "type": "text", "text": "2026-09-01 12:00", "size": "xs", "color": "#111111", "align": "end" }
-                                            ]
-                                        }
-                                    ]
-                                },
-                                { "type": "separator" },
-                                { "type": "text", "text": "📦 รายการอ้างอิงสินค้า", "weight": "bold", "size": "xs", "color": "#666666" },
-                                {
-                                    "type": "box",
-                                    "layout": "vertical",
-                                    "contents": [
-                                        { "type": "text", "text": "👤 ลค: " + customer + " (DO: -)", "weight": "bold", "size": "sm", "color": "#111111" }
-                                    ]
-                                },
-                                {
-                                    "type": "box",
-                                    "layout": "horizontal",
-                                    "contents": [
-                                        { "type": "text", "text": "  • GKK24 (4 แคปซูล) (x300)", "size": "xs", "color": "#555555" },
-                                        { "type": "text", "text": "฿" + amount + ".00", "size": "xs", "color": "#111111", "align": "end", "weight": "bold" }
-                                    ]
-                                }
-                            ]
+            try {
+                const res = await liff.shareTargetPicker([
+                    {
+                        "type": "flex",
+                        "altText": "🔔 แจ้งชำระเงิน ยอด ฿60,000",
+                        "contents": {
+                            "type": "bubble",
+                            "header": {
+                                "type": "box",
+                                "layout": "vertical",
+                                "backgroundColor": "#1DB446",
+                                "contents": [
+                                    { "type": "text", "text": "🔔 แจ้งชำระเงินใหม่", "weight": "bold", "size": "md", "color": "#ffffff" }
+                                ]
+                            },
+                            "body": {
+                                "type": "box",
+                                "layout": "vertical",
+                                "spacing": "md",
+                                "contents": [
+                                    {
+                                        "type": "box",
+                                        "layout": "horizontal",
+                                        "contents": [
+                                            { "type": "text", "text": "ยอดชำระเงิน:", "size": "sm", "color": "#666666", "weight": "bold" },
+                                            { "type": "text", "text": "฿60,000", "weight": "bold", "size": "lg", "color": "#1DB446", "align": "end" }
+                                        ]
+                                    },
+                                    { "type": "separator" },
+                                    {
+                                        "type": "box",
+                                        "layout": "vertical",
+                                        "spacing": "xs",
+                                        "contents": [
+                                            {
+                                                "type": "box",
+                                                "layout": "horizontal",
+                                                "contents": [
+                                                    { "type": "text", "text": "👤 ผู้แจ้ง:", "size": "xs", "color": "#666666" },
+                                                    { "type": "text", "text": "P'Lek", "size": "xs", "color": "#111111", "align": "end", "weight": "bold" }
+                                                ]
+                                            },
+                                            {
+                                                "type": "box",
+                                                "layout": "horizontal",
+                                                "contents": [
+                                                    { "type": "text", "text": "🏦 โอนเข้า:", "size": "xs", "color": "#666666" },
+                                                    { "type": "text", "text": "บิลเลี่ยนแนร์ Kbank", "size": "xs", "color": "#111111", "align": "end" }
+                                                ]
+                                            },
+                                            {
+                                                "type": "box",
+                                                "layout": "horizontal",
+                                                "contents": [
+                                                    { "type": "text", "text": "📅 วัน/เวลา:", "size": "xs", "color": "#666666" },
+                                                    { "type": "text", "text": "2026-09-01 12:00", "size": "xs", "color": "#111111", "align": "end" }
+                                                ]
+                                            }
+                                        ]
+                                    },
+                                    { "type": "separator" },
+                                    { "type": "text", "text": "📦 รายการอ้างอิงสินค้า", "weight": "bold", "size": "xs", "color": "#666666" },
+                                    {
+                                        "type": "box",
+                                        "layout": "vertical",
+                                        "contents": [
+                                            { "type": "text", "text": "👤 ลค: CCCCCCC (DO: -)", "weight": "bold", "size": "sm", "color": "#111111" }
+                                        ]
+                                    },
+                                    {
+                                        "type": "box",
+                                        "layout": "horizontal",
+                                        "contents": [
+                                            { "type": "text", "text": "  • GKK24 (4 แคปซูล) (x300)", "size": "xs", "color": "#555555" },
+                                            { "type": "text", "text": "฿60,000.00", "size": "xs", "color": "#111111", "align": "end", "weight": "bold" }
+                                        ]
+                                    }
+                                ]
+                            }
                         }
                     }
-                }
-            ])
-            .then((res) => {
+                ]);
+                
                 if (res) {
-                    liff.closeWindow(); // แชร์ข้อความเสร็จ บังคับปิดหน้าระบบทันที
+                    liff.closeWindow(); 
                 }
-            })
-            .catch((error) => {
-                alert("โครงสร้างผิดพลาด: " + error.message);
-            });
+            } catch (error) {
+                alert("โครงสร้างผิดพลาดหรือยกเลิกการส่ง: " + error.message);
+            }
         }
     </script>
 </body>
