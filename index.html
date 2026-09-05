@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>กำลังดำเนินการส่งต่อข้อความ...</title>
+    <!-- นำเข้าปลั๊กอินสคริปต์หลักที่เป็นทางการของ LINE -->
+    <script src="https://line-scdn.net"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding-top: 60px; color: #333; background-color: #f9f9f9; }
+        .loader { border: 4px solid #f3f3f3; border-top: 4px solid #1DB446; border-radius: 50%; width: 35px; height: 35px; animation: spin 1s linear infinite; margin: 20px auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <div class="loader"></div>
+    <p>ระบบกำลังเปิดหน้าต่างส่งต่อข้อมูลของแอป LINE โปรดรอสักครู่...</p>
+
+    <script>
+        // รหัส LIFF ID ของคุณที่ถูกต้องแม่นยำ
+        const MY_LIFF_ID = "2011437100-YADN8PIm"; 
+
+        // รันระบบเริ่มต้นความปลอดภัยแบบเชื่อมต่อคิวงานตรงไปตรงมาตามมาตรฐานของ LINE
+        liff.init({ liffId: MY_LIFF_ID }).then(() => {
+            if (!liff.isLoggedIn()) {
+                liff.login();
+            } else {
+                // เรียกใช้ Share Target Picker เพื่อดึงหน้าต่างเลือกเพื่อนขึ้นมาทันที
+                liff.shareTargetPicker([
+                    {
+                        "type": "flex",
+                        "altText": "🔔 แจ้งตรวจสอบข้อมูลชำระเงินใหม่",
+                        "contents": {
+                            "type": "bubble",
+                            "header": {
+                                "type": "box", "layout": "vertical", "backgroundColor": "#1DB446",
+                                "contents": [{ "type": "text", "text": "🔔 ตรวจสอบข้อมูลชำระเงิน (แชร์ต่อ)", "weight": "bold", "size": "lg", "color": "#ffffff" }]
+                            },
+                            "body": {
+                                "type": "box", "layout": "vertical", "spacing": "md",
+                                "contents": [
+                                    {
+                                        "type": "box", "layout": "horizontal",
+                                        "contents": [
+                                            { "type": "text", "text": "กรุณาคลิกดูรายละเอียดข้อมูลธุรกรรมต้นฉบับผ่านทางห้องแชทหลัก", "size": "xs", "color": "#666666", "wrap": true }
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    }
+                ]).then((res) => {
+                    if (res) {
+                        // ส่งแชร์สำเร็จ ปิดหน้าต่างสลัดตัวเองกลับสู่ห้องแชทเดิมทันที
+                        liff.closeWindow();
+                    } else {
+                        // กรณีผู้ใช้กดยกเลิก ก็ให้ปิดหน้าต่างกลับที่เดิมเช่นกัน
+                        liff.closeWindow();
+                    }
+                }).catch((error) => {
+                    alert("สิทธิ์แชร์ถูกปฏิเสธ: " + error.message);
+                    liff.closeWindow();
+                });
+            }
+        }).catch((err) => {
+            alert("เชื่อมต่อระบบล้มเหลว: " + err.message);
+        });
+    </script>
+</body>
+</html>
